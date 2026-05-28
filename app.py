@@ -929,7 +929,7 @@ def payment_submit():
             db.session.commit()
             
             # Send WhatsApp notification with receipt
-            send_whatsapp_receipt(payment, screenshot_path)
+            send_whatsapp_receipt(payment, screenshot_path_val)
             
             flash('Payment submitted successfully! Receipt sent to WhatsApp.', 'success')
             return redirect(url_for('employer_dashboard'))
