@@ -165,7 +165,7 @@
                                     
                                     {% if payment.screenshot_path %}
                                     <!-- View Screenshot -->
-                                    <button class="view-screenshot-btn" data-screenshot-url="{{ url_for('static', filename='uploads/' + payment.screenshot_path) }}" style="padding: 0.5rem 0.75rem; background: var(--text-secondary); color: white; border: none; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer; font-weight: 600;">
+                                    <button class="view-screenshot-btn" data-screenshot-url="{{ get_image_url(payment.screenshot_path) }}" style="padding: 0.5rem 0.75rem; background: var(--text-secondary); color: white; border: none; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer; font-weight: 600;">
                                         <i class='bx bx-image'></i> View
                                     </button>
                                     {% endif %}

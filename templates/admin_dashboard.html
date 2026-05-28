@@ -69,9 +69,9 @@
                             <div style="display: flex; align-items: center; gap: 1rem;">
                                 {% set profile_pic = None %}
                                 {% if user.worker and user.worker.profile_picture %}
-                                    {% set profile_pic = url_for('static', filename='uploads/' + user.worker.profile_picture) %}
+                                    {% set profile_pic = get_image_url(user.worker.profile_picture) %}
                                 {% elif user.employer and user.employer.profile_picture %}
-                                    {% set profile_pic = url_for('static', filename='uploads/' + user.employer.profile_picture) %}
+                                    {% set profile_pic = get_image_url(user.employer.profile_picture) %}
                                 {% endif %}
                                 
                                 {% if profile_pic %}

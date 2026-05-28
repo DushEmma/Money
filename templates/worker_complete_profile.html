@@ -40,7 +40,7 @@
                             <div class="image-upload-wrapper" style="position: relative; width: 140px; height: 140px; margin: 0 auto;">
                                 <div id="profilePreview" style="width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--white); box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; background: #f8fafc; display: flex; align-items: center; justify-content: center;">
                                     {% if worker.profile_picture %}
-                                        <img src="{{ url_for('static', filename='uploads/' + worker.profile_picture) }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <img src="{{ get_image_url(worker.profile_picture) }}" style="width: 100%; height: 100%; object-fit: cover;">
                                     {% else %}
                                         <span style="font-size: 3rem; opacity: 0.2;"><i class='bx bxs-user'></i></span>
                                     {% endif %}
@@ -58,7 +58,7 @@
                             <div class="image-upload-wrapper" style="position: relative; width: 180px; height: 120px; margin: 0 auto;">
                                 <div id="idPreview" style="width: 100%; height: 100%; border-radius: 1rem; border: 2px dashed #cbd5e1; background: #f8fafc; display: flex; align-items: center; justify-content: center; overflow: hidden;">
                                     {% if worker.id_photo %}
-                                        <img src="{{ url_for('static', filename='uploads/' + worker.id_photo) }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <img src="{{ get_image_url(worker.id_photo) }}" style="width: 100%; height: 100%; object-fit: cover;">
                                     {% else %}
                                         <div style="text-align: center; opacity: 0.4;">
                                             <div style="font-size: 1.5rem;"><i class='bx bxs-id-card'></i></div>

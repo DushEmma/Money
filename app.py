@@ -90,6 +90,26 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+# Run database migrations at startup
+@app.before_request
+def run_migrations():
+    """Run database migrations once at startup"""
+    if not hasattr(app, '_migration_complete'):
+        try:
+            with app.app_context():
+                # Try to import and run the column migration
+                try:
+                    from ensure_worker_columns import check_and_add_worker_columns
+                    check_and_add_worker_columns()
+                    logging.info("✅ Worker column migration check completed at startup")
+                except ImportError:
+                    logging.warning("⚠️ Migration script not found, skipping...")
+                except Exception as migration_err:
+                    logging.error(f"⚠️ Error running migration at startup: {str(migration_err)}")
+        finally:
+            app._migration_complete = True
+
+
 # Global error handler
 @app.errorhandler(500)
 def internal_server_error(e):
@@ -132,7 +152,14 @@ def inject_globals():
             notifs = []
             unread_count = 0
         
-    return dict(_=translate, notifs=notifs, unread_count=unread_count)
+    def get_image_url(filename, folder='uploads'):
+        if not filename:
+            return ""
+        if filename.startswith('http://') or filename.startswith('https://'):
+            return filename
+        return url_for('static', filename=f"{folder}/{filename}")
+        
+    return dict(_=translate, notifs=notifs, unread_count=unread_count, get_image_url=get_image_url)
 
 @app.route('/set_language/<lang>')
 def set_language(lang):
@@ -199,36 +226,48 @@ def handle_exception(e):
     return render_template('500.html'), 500
 
 def calculate_profile_completion(worker):
-    """Calculate worker profile completion percentage"""
-    completion = 0
-    total_fields = 13  # Total required fields for 100% completion
+    """Calculate worker profile completion percentage - handles missing columns gracefully"""
+    if not worker:
+        return 0
     
-    # Check each required field (approximately 7.7% each)
-    if worker.profile_picture:
-        completion += 1
-    if worker.id_photo:
-        completion += 1
-    if worker.age is not None and worker.age >= 18:
-        completion += 1
-    if worker.province and worker.district and worker.sector and worker.cell and worker.village:
-        completion += 1
-    if worker.experience_years is not None:
-        completion += 1
-    if worker.experience_details:
-        completion += 1
-    if worker.skills:
-        completion += 1
-    if worker.reference_name:
-        completion += 1
-    if worker.reference_phone:
-        completion += 1
-    if worker.reference_relationship:
-        completion += 1
-    if worker.national_id_number:
-        completion += 1
-    
-    percentage = (completion / total_fields) * 100
-    return round(percentage, 0)
+    try:
+        completion = 0
+        total_fields = 13  # Total required fields for 100% completion
+        
+        # Check each required field (approximately 7.7% each)
+        # Use getattr with defaults to handle missing columns in production
+        if getattr(worker, 'profile_picture', None):
+            completion += 1
+        if getattr(worker, 'id_photo', None):
+            completion += 1
+        age = getattr(worker, 'age', None)
+        if age is not None and age >= 18:
+            completion += 1
+        if (getattr(worker, 'province', None) and getattr(worker, 'district', None) and 
+            getattr(worker, 'sector', None) and getattr(worker, 'cell', None) and 
+            getattr(worker, 'village', None)):
+            completion += 1
+        if getattr(worker, 'experience_years', None) is not None:
+            completion += 1
+        if getattr(worker, 'experience_details', None):
+            completion += 1
+        if getattr(worker, 'skills', None):
+            completion += 1
+        if getattr(worker, 'reference_name', None):
+            completion += 1
+        if getattr(worker, 'reference_phone', None):
+            completion += 1
+        if getattr(worker, 'reference_relationship', None):
+            completion += 1
+        if getattr(worker, 'national_id_number', None):
+            completion += 1
+        
+        percentage = (completion / total_fields) * 100
+        return round(percentage, 0)
+    except Exception as e:
+        app.logger.error(f"Error calculating profile completion: {str(e)}")
+        app.logger.error(f"Traceback: {traceback.format_exc()}")
+        return 0  # Return 0 on error to allow dashboard to continue
 
 def check_profile_completion(worker):
     """Check if worker profile is complete enough for full access (70%+)"""
@@ -409,10 +448,6 @@ def login():
                     flash('❌ Your account has been blocked. Please contact support.', 'error')
                     return render_template('login.html')
                 
-                # Check if user is approved (except admin users)
-                if user.user_type != 'admin' and not user.is_approved:
-                    flash('⏳ Your account is pending approval. Please wait for admin verification.', 'warning')
-                    return render_template('login.html')
                 
                 login_user(user)
                 # Personalized welcome message
@@ -491,8 +526,10 @@ def register():
         db.session.add(welcome_notif)
         db.session.commit()
         
-        flash('Registration successful! Please login.')
-        return redirect(url_for('login'))
+        login_user(new_user)
+        user_type_name = "Worker" if new_user.user_type == 'worker' else "Employer" if new_user.user_type == 'employer' else "Administrator"
+        flash(f'🎉 Welcome to Umukozi, {new_user.full_name}! You are logged in as a {user_type_name}.', 'success')
+        return redirect(url_for('dashboard'))
     
     return render_template('register.html')
 
@@ -506,13 +543,23 @@ def dashboard():
                 worker = Worker(user_id=current_user.id)
                 db.session.add(worker)
                 db.session.commit()
-                
-            # Check if profile is complete
-            if not check_profile_completion(worker):
-                return redirect(url_for('worker_complete_profile'))
             
-            # Get job recommendations - fetch recent open jobs
-            recommended_jobs = Job.query.filter_by(status='open').order_by(Job.created_at.desc()).limit(4).all()
+            try:
+                # Check if profile is complete
+                if not check_profile_completion(worker):
+                    return redirect(url_for('worker_complete_profile'))
+            except Exception as profile_err:
+                logging.error(f"Error checking profile completion: {str(profile_err)}")
+                logging.error(f"Profile check traceback: {traceback.format_exc()}")
+                # Continue to dashboard even if profile check fails
+            
+            try:
+                # Get job recommendations - fetch recent open jobs
+                recommended_jobs = Job.query.filter_by(status='open').order_by(Job.created_at.desc()).limit(4).all()
+            except Exception as jobs_err:
+                logging.error(f"Error fetching recommended jobs: {str(jobs_err)}")
+                logging.error(f"Jobs fetch traceback: {traceback.format_exc()}")
+                recommended_jobs = []  # Continue with empty jobs list
             
             return render_template('worker_dashboard.html', worker=worker, recommended_jobs=recommended_jobs)
         except Exception as e:
@@ -521,74 +568,102 @@ def dashboard():
             flash('An error occurred while loading your dashboard. Please try again.', 'error')
             return redirect(url_for('index'))
     elif current_user.user_type == 'employer':
-        employer = Employer.query.filter_by(user_id=current_user.id).first()
-        if not employer:
-            employer = Employer(user_id=current_user.id)
-            db.session.add(employer)
-            db.session.commit()
+        try:
+            employer = Employer.query.filter_by(user_id=current_user.id).first()
+            if not employer:
+                employer = Employer(user_id=current_user.id)
+                db.session.add(employer)
+                db.session.commit()
             
-        # Check if employer has verified payments
-        has_verified_payments = Payment.query.filter_by(
-            employer_id=employer.id,
-            status='verified'
-        ).count() > 0
-        
-        # Calculate statistics for static cards
-        employer_jobs = Job.query.filter_by(employer_id=employer.id).all()
-        total_jobs_posted = len(employer_jobs)
-        positions_filled = len([job for job in employer_jobs if job.status == 'filled'])
-        
-        # Calculate average rating from completed jobs
-        completed_jobs = [job for job in employer_jobs if job.status == 'filled']
-        average_rating = 0.0
-        if completed_jobs:
-            # Get reviews for completed jobs
-            reviews = []
-            for job in completed_jobs:
-                job_reviews = Review.query.filter_by(job_id=job.id).all()
-                reviews.extend(job_reviews)
-            if reviews:
-                average_rating = sum(review.rating for review in reviews) / len(reviews)
-        
-        # Add statistics to employer object for template access
-        employer.total_jobs_posted = total_jobs_posted
-        employer.positions_filled = positions_filled
-        employer.average_rating = average_rating
-        employer.jobs = employer_jobs
-            
-        # Show available workers (prioritize verified but include all available)
-        workers = Worker.query.filter(
-            Worker.availability_status == 'available'
-        ).limit(8).all()
-        
-        # If not enough available workers, add more workers regardless of availability
-        if len(workers) < 8:
-            additional_workers = Worker.query.filter(
-                Worker.id.notin_([w.id for w in workers])
-            ).limit(8 - len(workers)).all()
-            workers.extend(additional_workers)
-        
-        # Check payment status for each worker and hide contact info if not paid
-        workers_with_contact_status = []
-        for worker in workers:
             try:
-                contact_info = get_worker_contact_info(employer.id, worker.id)
-                workers_with_contact_status.append({
-                    'worker': worker,
-                    'has_access': contact_info['has_access'],
-                    'phone': contact_info['phone'],
-                    'email': contact_info['email']
-                })
-            except Exception as e:
-                # If contact info fails for a specific worker, continue with default values
-                workers_with_contact_status.append({
-                    'worker': worker,
-                    'has_access': False,
-                    'phone': 'Contact info unavailable',
-                    'email': 'Contact info unavailable'
-                })
-        
-        return render_template('employer_dashboard.html', employer=employer, workers_with_contact_status=workers_with_contact_status, has_verified_payments=has_verified_payments)
+                # Check if employer has verified payments
+                has_verified_payments = Payment.query.filter_by(
+                    employer_id=employer.id,
+                    status='verified'
+                ).count() > 0
+            except Exception as payment_err:
+                logging.error(f"Error checking verified payments: {str(payment_err)}")
+                has_verified_payments = False
+            
+            try:
+                # Calculate statistics for static cards
+                employer_jobs = Job.query.filter_by(employer_id=employer.id).all()
+                total_jobs_posted = len(employer_jobs)
+                positions_filled = len([job for job in employer_jobs if job.status == 'filled'])
+                
+                # Calculate average rating from completed jobs
+                completed_jobs = [job for job in employer_jobs if job.status == 'filled']
+                average_rating = 0.0
+                if completed_jobs:
+                    # Get reviews for completed jobs
+                    reviews = []
+                    for job in completed_jobs:
+                        try:
+                            job_reviews = Review.query.filter_by(job_id=job.id).all()
+                            reviews.extend(job_reviews)
+                        except Exception as review_err:
+                            logging.error(f"Error fetching reviews for job {job.id}: {str(review_err)}")
+                            continue
+                    if reviews:
+                        average_rating = sum(review.rating for review in reviews) / len(reviews)
+            except Exception as stats_err:
+                logging.error(f"Error calculating employer statistics: {str(stats_err)}")
+                logging.error(f"Stats calculation traceback: {traceback.format_exc()}")
+                total_jobs_posted = 0
+                positions_filled = 0
+                average_rating = 0.0
+                employer_jobs = []
+            
+            # Add statistics to employer object for template access
+            employer.total_jobs_posted = total_jobs_posted
+            employer.positions_filled = positions_filled
+            employer.average_rating = average_rating
+            employer.jobs = employer_jobs
+            
+            try:
+                # Show available workers (prioritize verified but include all available)
+                workers = Worker.query.filter(
+                    Worker.availability_status == 'available'
+                ).limit(8).all()
+                
+                # If not enough available workers, add more workers regardless of availability
+                if len(workers) < 8:
+                    additional_workers = Worker.query.filter(
+                        Worker.id.notin_([w.id for w in workers])
+                    ).limit(8 - len(workers)).all()
+                    workers.extend(additional_workers)
+            except Exception as workers_err:
+                logging.error(f"Error fetching workers: {str(workers_err)}")
+                logging.error(f"Workers fetch traceback: {traceback.format_exc()}")
+                workers = []
+            
+            # Check payment status for each worker and hide contact info if not paid
+            workers_with_contact_status = []
+            for worker in workers:
+                try:
+                    contact_info = get_worker_contact_info(employer.id, worker.id)
+                    workers_with_contact_status.append({
+                        'worker': worker,
+                        'has_access': contact_info['has_access'],
+                        'phone': contact_info['phone'],
+                        'email': contact_info['email']
+                    })
+                except Exception as e:
+                    logging.error(f"Error getting contact info for worker {worker.id}: {str(e)}")
+                    # If contact info fails for a specific worker, continue with default values
+                    workers_with_contact_status.append({
+                        'worker': worker,
+                        'has_access': False,
+                        'phone': 'Contact info unavailable',
+                        'email': 'Contact info unavailable'
+                    })
+            
+            return render_template('employer_dashboard.html', employer=employer, workers_with_contact_status=workers_with_contact_status, has_verified_payments=has_verified_payments)
+        except Exception as e:
+            logging.error(f"Error in employer dashboard: {str(e)}")
+            logging.error(f"Employer dashboard traceback: {traceback.format_exc()}")
+            flash('An error occurred while loading your dashboard. Please try again.', 'error')
+            return redirect(url_for('index'))
     elif current_user.user_type == 'admin':
         return redirect(url_for('admin_dashboard'))
     else:
