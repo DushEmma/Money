@@ -85,14 +85,12 @@
                 <div class="workers-grid">
                 {% for worker_data in workers_with_contact_status %}
                 {% set worker = worker_data.worker %}
-                <div class="card worker-card" style="position: relative;">
-                    <!-- New Worker Indicator -->
+                <div class="card worker-card compact" style="position: relative;">
                     {% if worker_data.is_new %}
-                    <div class="new-worker-badge">NEW</div>
+                        <div class="new-worker-badge">NEW</div>
                     {% endif %}
-                    
-                    <!-- Avatar Section -->
-                    <div class="worker-avatar {% if worker.profile_picture %}has-profile-picture{% else %}default-avatar{% endif %}">
+
+                    <div class="worker-avatar">
                         {% if worker.profile_picture %}
                             <img src="{{ get_image_url(worker.profile_picture) }}" alt="{{ worker.user.full_name }}">
                         {% else %}
@@ -100,76 +98,31 @@
                         {% endif %}
                     </div>
 
-                    <!-- Name & Status -->
-                    <div style="margin-bottom: 0.75rem;">
-                        <h4 class="worker-name">{{ worker.user.full_name }}</h4>
-                        <div class="worker-status-row">
-                            <span class="badge badge-{{ 'success' if worker.availability_status == 'available' else 'warning' if worker.availability_status == 'busy' else 'secondary' }}">
-                                {{ worker.availability_status|title }}
-                            </span>
-                            <div class="worker-rating">
-                                <i class='bx bxs-star'></i>
-                                <span>{% if worker.average_rating %}{{ "%.1f"|format(worker.average_rating) }}{% else %}5.0{% endif %} ({{ worker.received_reviews|length }} reviews)</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Info Row -->
-                    <div class="worker-info-row">
-                        <span class="worker-info-item">
-                            <i class='bx bxs-map' style="color: var(--danger-color);"></i> {{ worker.district or 'Kigali' }}
-                        </span>
-                        <span class="worker-info-item">
-                            <i class='bx bxs-briefcase' style="color: var(--primary-color);"></i> {{ worker.experience_years or 0 }} yr experience
-                        </span>
-                    </div>
-
-                    <!-- Skills Section -->
-                    <div style="margin-bottom: 1rem;">
-                        <div style="font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">Skills</div>
-                        <div class="worker-skills">
-                            {% if worker.skills %}
-                                {% for skill in worker.skills.split(',')[:3] %}
-                                    <span class="skill-tag">{{ skill.strip() }}</span>
-                                {% endfor %}
+                    <div class="worker-info">
+                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                            <h4 class="worker-name">{{ worker.user.full_name }}</h4>
+                            {% if worker.is_verified %}
+                                <span class="verified-badge">✓</span>
                             {% endif %}
+                            <span class="badge badge-{{ 'success' if worker.availability_status == 'available' else 'warning' if worker.availability_status == 'busy' else 'secondary' }}" style="font-size:0.75rem; padding:0.15rem 0.45rem;">{{ worker.availability_status|title }}</span>
+                        </div>
+                        <div class="worker-quick" style="color: var(--text-secondary); font-size:0.9rem; margin-top:0.25rem;">
+                            {{ worker.district or 'Kigali' }} · {{ worker.experience_years or 0 }} yr · ⭐ {% if worker.average_rating %}{{ "%.1f"|format(worker.average_rating) }}{% else %}5.0{% endif %}
                         </div>
                     </div>
 
-                    <!-- Statistics Section -->
-                    <div style="margin-bottom: 1rem; padding: 0.75rem; background: #f8fafc; border-radius: 0.5rem;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.8rem;">
-                            <div style="text-align: center;">
-                                <div style="font-weight: 700; color: var(--text-primary);">{{ worker.received_reviews|length }}</div>
-                                <div style="color: var(--text-secondary);">Jobs Completed</div>
-                            </div>
-                            <div style="text-align: center;">
-                                <div style="font-weight: 700; color: var(--text-primary);">{% if worker.average_rating %}{{ "%.1f"|format(worker.average_rating) }}{% else %}5.0{% endif %}</div>
-                                <div style="color: var(--text-secondary);">Rating</div>
-                            </div>
-                        </div>
-                        {% if worker.is_verified %}
-                        <div style="text-align: center; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e2e8f0;">
-                            <span style="background: #ecfdf5; color: #065f46; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">
-                                ✓ Trusted Worker Verified
-                            </span>
-                        </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Action Buttons -->
                     <div class="worker-actions">
-                        <button class="btn btn-outline btn-sm" onclick="viewWorkerProfile({{ worker.id }})" style="flex: 1;">
-                            <i class='bx bx-user' style="margin-right: 0.25rem;"></i> View Profile
+                        <button class="btn btn-outline btn-sm" onclick="viewWorkerProfile({{ worker.id }})">
+                            <i class='bx bx-user' style="margin-right: 0.25rem;"></i>
                         </button>
-                        
+
                         {% if worker_data.has_access %}
-                            <button onclick="openWhatsApp('{{ worker_data.phone }}')" class="btn btn-sm" style="flex: 1;" title="Contact">
-                                <i class='bx bxs-phone' style="margin-right: 0.25rem;"></i> Contact
+                            <button onclick="openWhatsApp('{{ worker_data.phone }}')" class="btn btn-sm">
+                                <i class='bx bxs-phone' style="margin-right: 0.25rem;"></i>
                             </button>
                         {% else %}
-                            <button onclick="window.location.href='{{ url_for('payment_form_mobile') }}';" class="btn btn-primary btn-sm" style="flex: 1;">
-                                <i class='bx bxs-lock-open' style="margin-right: 0.25rem;"></i> Unlock Contact
+                            <button onclick="window.location.href='{{ url_for('payment_form_mobile') }}';" class="btn btn-primary btn-sm">
+                                <i class='bx bxs-lock-open' style="margin-right: 0.25rem;"></i>
                             </button>
                         {% endif %}
                     </div>

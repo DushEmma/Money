@@ -793,11 +793,56 @@ body {
     margin-bottom: 1.5rem;
 }
 
-.hero h1 {
+hero h1 {
     font-size: clamp(2.8rem, 5vw, 4.5rem);
     line-height: 1.02;
     max-width: 760px;
     margin-bottom: 1.75rem;
+}
+
+/* Compact worker card styles */
+.workers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+}
+.worker-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    background: var(--white);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+.worker-card.compact { min-height: 110px; }
+.worker-avatar {
+    width: 96px;
+    height: 96px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    font-weight: 700;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+.worker-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.worker-info { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+.worker-name { font-size: 1rem; font-weight: 800; margin: 0; }
+.verified-badge { background: #ecfdf5; color: #065f46; padding: 0.15rem 0.5rem; border-radius: 0.4rem; font-weight: 700; font-size: 0.8rem; }
+.worker-quick { color: var(--text-secondary); font-size: 0.9rem; }
+.worker-actions { margin-left: auto; display: flex; gap: 0.5rem; align-items: center; }
+.worker-actions .btn { padding: 0.45rem 0.6rem; font-size: 0.85rem; }
+
+@media (max-width: 640px) {
+    .worker-card { flex-direction: column; align-items: stretch; }
+    .worker-avatar { width: 72px; height: 72px; border-radius: 10px; }
+    .worker-actions { width: 100%; justify-content: space-between; margin-top: 0.5rem; }
 }
 
 .hero-description {
