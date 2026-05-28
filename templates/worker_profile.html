@@ -1,0 +1,808 @@
+{% extends "base.html" %}
+
+{% block title %}{{ worker.user.full_name }} - Worker Profile{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Modern Profile Styles */
+.profile-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.profile-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 1.5rem;
+    padding: 3rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+.profile-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.05)"/><circle cx="10" cy="50" r="0.5" fill="rgba(255,255,255,0.05)"/><circle cx="90" cy="30" r="0.5" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+}
+
+.profile-avatar-wrapper {
+    position: relative;
+    z-index: 2;
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 4px solid rgba(255,255,255,0.2);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3.5rem;
+    color: white;
+    font-weight: 700;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    transition: transform 0.3s ease;
+}
+
+.profile-avatar:hover {
+    transform: scale(1.05);
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.profile-info {
+    position: relative;
+    z-index: 2;
+}
+
+.profile-name {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.profile-location {
+    font-size: 1.1rem;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.profile-badges {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+}
+
+.modern-badge {
+    padding: 0.5rem 1.25rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+    transition: all 0.3s ease;
+}
+
+.modern-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.badge-verified {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.badge-available {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.badge-busy {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.badge-unavailable {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.badge-experience {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.profile-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.modern-btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.btn-primary-modern {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+    backdrop-filter: blur(10px);
+}
+
+.btn-primary-modern:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.btn-outline-modern {
+    background: transparent;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+    backdrop-filter: blur(10px);
+}
+
+.btn-outline-modern:hover {
+    background: rgba(255,255,255,0.1);
+    transform: translateY(-2px);
+}
+
+.content-section {
+    background: white;
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.content-section:hover {
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.section-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.icon-summary {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+}
+
+.icon-skills {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.icon-services {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+}
+
+.icon-experience {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+}
+
+.icon-rates {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+}
+
+.icon-reference {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    color: white;
+}
+
+.skill-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.skill-tag {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    color: #0369a1;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border: 1px solid #bae6fd;
+    transition: all 0.3s ease;
+}
+
+.skill-tag:hover {
+    background: linear-gradient(135deg, #0369a1, #075985);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(3, 105, 161, 0.3);
+}
+
+.service-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.service-tag {
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    color: #166534;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border: 1px solid #bbf7d0;
+    transition: all 0.3s ease;
+}
+
+.service-tag:hover {
+    background: linear-gradient(135deg, #166534, #15803d);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(22, 101, 52, 0.3);
+}
+
+.rates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.rate-card {
+    background: linear-gradient(135deg, #fef2f2, #fee2e2);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    border: 1px solid #fecaca;
+    transition: all 0.3s ease;
+}
+
+.rate-card:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(220, 38, 38, 0.3);
+}
+
+.rate-label {
+    font-size: 0.875rem;
+    opacity: 0.8;
+    margin-bottom: 0.5rem;
+}
+
+.rate-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.reference-card {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    border: 1px solid #bae6fd;
+    transition: all 0.3s ease;
+}
+
+.reference-card:hover {
+    background: linear-gradient(135deg, #0369a1, #075985);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(3, 105, 161, 0.3);
+}
+
+.contact-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s ease;
+}
+
+.contact-modal-content {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 1.5rem;
+    max-width: 450px;
+    width: 90%;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s ease;
+}
+
+.contact-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.contact-btn {
+    padding: 1rem;
+    border: none;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-whatsapp {
+    background: #25D366;
+    color: white;
+}
+
+.btn-whatsapp:hover {
+    background: #128C7E;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(37, 211, 102, 0.3);
+}
+
+.btn-call {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-call:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* WhatsApp Sidebar Item Styles */
+.sidebar-item.whatsapp-link {
+    color: #25d366;
+    border-left: 3px solid #25d366;
+    background: rgba(37, 211, 102, 0.05);
+}
+
+.sidebar-item.whatsapp-link:hover {
+    background: rgba(37, 211, 102, 0.1);
+    color: #128c7e;
+    border-left-color: #128c7e;
+}
+
+.sidebar-item.whatsapp-link i {
+    color: #25d366;
+}
+
+.sidebar-item.whatsapp-link:hover i {
+    color: #128c7e;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow-x: hidden;
+        width: 100vw;
+    }
+    
+    html {
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow-x: hidden;
+    }
+    
+    .profile-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100vw !important;
+        width: 100vw !important;
+        overflow-x: hidden;
+        position: relative;
+        left: 0;
+    }
+    
+    .profile-header {
+        padding: 2rem 1rem;
+        text-align: center;
+        border-radius: 0;
+        margin: 0;
+        width: 100vw;
+        box-sizing: border-box;
+        position: relative;
+        left: 0;
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        font-size: 3rem;
+        margin: 0 auto 1.5rem;
+    }
+    
+    .profile-name {
+        font-size: 2rem;
+    }
+    
+    .profile-badges {
+        justify-content: center;
+    }
+    
+    .profile-actions {
+        justify-content: center;
+    }
+    
+    .content-section {
+        padding: 1.5rem 1rem !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+        width: 100vw !important;
+        box-shadow: none !important;
+        border-top: 1px solid #e5e7eb;
+        border-bottom: 1px solid #e5e7eb;
+        box-sizing: border-box;
+        position: relative;
+        left: 0;
+        right: 0;
+    }
+    
+    .content-section:hover {
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    
+    .rates-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .contact-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .main-content {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        overflow-x: hidden;
+        position: relative;
+        left: 0;
+    }
+    
+    .dashboard-layout {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100vw !important;
+        overflow-x: hidden;
+        position: relative;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    {% if current_user.user_type == 'employer' %}
+        {% include 'includes/employer_sidebar.html' %}
+    {% elif current_user.user_type == 'worker' %}
+        {% include 'includes/worker_sidebar.html' %}
+    {% endif %}
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="profile-container">
+            <!-- Profile Header -->
+            <div class="profile-header">
+                <div style="display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;">
+                    <div class="profile-avatar-wrapper">
+                        <div class="profile-avatar {% if worker.profile_picture %}has-profile-picture{% else %}default-avatar{% endif %}">
+                            {% if worker.profile_picture %}
+                                <img src="{{ url_for('static', filename='uploads/' + worker.profile_picture) }}" alt="{{ worker.user.full_name }}">
+                            {% else %}
+                                {{ worker.user.full_name[0].upper() }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="profile-info" style="flex: 1; min-width: 250px;">
+                        <h1 class="profile-name">{{ worker.user.full_name }}</h1>
+                        <div class="profile-location">
+                            <i class='bx bx-map-pin'></i>
+                            <span>{{ worker.district or 'Location N/A' }}{% if worker.province %}, {{ worker.province }}{% endif %}</span>
+                        </div>
+                        
+                        <div class="profile-badges">
+                            {% if worker.is_verified %}
+                                <span class="modern-badge badge-verified">
+                                    <i class='bx bxs-check-circle'></i> Verified
+                                </span>
+                            {% endif %}
+                            <span class="modern-badge badge-{{ worker.availability_status }}">
+                                <i class='bx bxs-circle'></i> {{ worker.availability_status|title }}
+                            </span>
+                            {% if worker.experience_years %}
+                                <span class="modern-badge badge-experience">
+                                    <i class='bx bxs-briefcase'></i> {{ worker.experience_years }} years
+                                </span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if current_user.user_type == 'employer' %}
+                            <div class="profile-actions">
+                                {% if contact_info and contact_info.has_access %}
+                                    <button class="modern-btn btn-primary-modern contact-btn" 
+                                        data-name="{{ worker.user.full_name }}" 
+                                        data-phone="{{ contact_info.phone }}" 
+                                        data-email="{{ contact_info.email }}">
+                                        <i class='bx bx-phone'></i> Contact Worker
+                                    </button>
+                                    <a href="{{ url_for('messages', user_id=worker.user.id) }}" class="modern-btn btn-outline-modern">
+                                        <i class='bx bx-message-rounded-dots'></i> Message
+                                    </a>
+                                {% else %}
+                                    {% if not has_verified_payments %}
+                                        <button class="modern-btn btn-primary-modern" disabled>
+                                            <i class='bx bx-credit-card'></i> Contact Unavailable
+                                        </button>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Professional Summary -->
+            <div class="content-section">
+                <h3 class="section-title">
+                    <div class="section-icon icon-summary">
+                        <i class='bx bxs-user'></i>
+                    </div>
+                    Professional Summary
+                </h3>
+                <p style="color: #6b7280; line-height: 1.7; font-size: 1.05rem;">
+                    {{ worker.bio or worker.professional_summary or 'No professional summary provided.' }}
+                </p>
+            </div>
+            
+            <!-- Skills -->
+            {% if worker.skills %}
+            <div class="content-section">
+                <h3 class="section-title">
+                    <div class="section-icon icon-skills">
+                        <i class='bx bxs-star'></i>
+                    </div>
+                    Skills & Expertise
+                </h3>
+                <div class="skill-tags">
+                    {% for skill in worker.skills.split(',') %}
+                        <span class="skill-tag">{{ skill.strip() }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Services -->
+            {% if worker.services_offered %}
+            <div class="content-section">
+                <h3 class="section-title">
+                    <div class="section-icon icon-services">
+                        <i class='bx bxs-service'></i>
+                    </div>
+                    Services Offered
+                </h3>
+                <div class="service-tags">
+                    {% for service in worker.services_offered.split(',') %}
+                        <span class="service-tag">{{ service.strip() }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Experience Details -->
+            {% if worker.experience_details %}
+            <div class="content-section">
+                <h3 class="section-title">
+                    <div class="section-icon icon-experience">
+                        <i class='bx bxs-briefcase-alt'></i>
+                    </div>
+                    Experience Details
+                </h3>
+                <p style="color: #6b7280; line-height: 1.7; font-size: 1.05rem;">
+                    {{ worker.experience_details }}
+                </p>
+            </div>
+            {% endif %}
+            
+            <!-- Rates -->
+            <div class="content-section">
+                <h3 class="section-title">
+                    <div class="section-icon icon-rates">
+                        <i class='bx bxs-dollar-circle'></i>
+                    </div>
+                    Rates & Pricing
+                </h3>
+                <div class="rates-grid">
+                    {% if worker.hourly_rate %}
+                        <div class="rate-card">
+                            <div class="rate-label">Hourly Rate</div>
+                            <div class="rate-value">{{ worker.hourly_rate }} FRW</div>
+                        </div>
+                    {% endif %}
+                    {% if worker.monthly_rate %}
+                        <div class="rate-card">
+                            <div class="rate-label">Monthly Rate</div>
+                            <div class="rate-value">{{ worker.monthly_rate }} FRW</div>
+                        </div>
+                    {% endif %}
+                    {% if not worker.hourly_rate and not worker.monthly_rate %}
+                        <div class="rate-card">
+                            <div class="rate-label">Contact for rates</div>
+                            <div class="rate-value">Negotiable</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Reference -->
+            {% if worker.reference_name %}
+            <div class="content-section">
+                <h3 class="section-title">
+                    <div class="section-icon icon-reference">
+                        <i class='bx bxs-user-voice'></i>
+                    </div>
+                    Professional Reference
+                </h3>
+                <div class="reference-card">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                        <div>
+                            <strong style="font-size: 1.1rem;">{{ worker.reference_name }}</strong>
+                            <div style="color: #6b7280; font-size: 0.9rem; margin-top: 0.25rem;">{{ worker.reference_relationship }}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <i class='bx bx-phone' style="font-size: 1.2rem; color: #0369a1;"></i>
+                        </div>
+                    </div>
+                    <div style="color: #6b7280;">
+                        <strong>Phone:</strong> {{ worker.reference_phone }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+        
+    // Add event listener to contact button
+    const contactButton = document.querySelector('.contact-btn');
+    if (contactButton) {
+        contactButton.addEventListener('click', function() {
+            const workerName = this.getAttribute('data-name');
+            const phone = this.getAttribute('data-phone');
+            const email = this.getAttribute('data-email');
+            showContactModal(workerName, phone, email);
+        });
+    }
+});
+
+function showContactModal(workerName, phone, email) {
+    const modal = document.createElement('div');
+    modal.className = 'contact-modal';
+    
+    modal.innerHTML = `
+        <div class="contact-modal-content">
+            <h3 style="margin-bottom: 1.5rem; color: #1f2937; font-size: 1.5rem; font-weight: 700;">Contact ${workerName}</h3>
+            <div style="margin-bottom: 1.5rem;">
+                <div style="margin-bottom: 1rem; padding: 1rem; background: #f8fafc; border-radius: 0.75rem;">
+                    <p style="margin-bottom: 0.5rem; color: #6b7280;"><strong>Phone:</strong> ${phone}</p>
+                    <p style="margin-bottom: 0; color: #6b7280;"><strong>Email:</strong> ${email}</p>
+                </div>
+            </div>
+            <div class="contact-buttons">
+                <button onclick="window.open('https://wa.me/${phone.replace(/[^0-9]/g, '')}', '_blank')" class="contact-btn btn-whatsapp">
+                    <i class='bx bxl-whatsapp'></i> WhatsApp
+                </button>
+                <button onclick="window.location.href='tel:${phone}'" class="contact-btn btn-call">
+                    <i class='bx bx-phone'></i> Call
+                </button>
+            </div>
+            <button onclick="this.closest('.contact-modal').remove()" style="width: 100%; margin-top: 1rem; padding: 0.75rem; background: #f3f4f6; color: #6b7280; border: none; border-radius: 0.75rem; cursor: pointer; font-weight: 600; transition: all 0.3s ease;">
+                Close
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+    
+    // Add escape key listener
+    const escapeHandler = (e) => {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
+}
+</script>
+{% endblock %}

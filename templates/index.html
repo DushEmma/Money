@@ -1,0 +1,230 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Umukozi - Find Trusted Household Workers in Rwanda{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero hero-fullbleed">
+    <!-- Full-bleed background image -->
+    <div class="hero-bg">
+        <img src="{{ url_for('static', filename='images/hero image 2.png') }}" alt="Professional Household Workers" />
+        <!-- Gradient only at the bottom to keep the subjects visible -->
+        <div class="hero-overlay-bottom"></div>
+    </div>
+
+    <!-- Bottom-left content overlay -->
+    <div class="hero-content-overlay">
+        <div class="hero-copy">
+            <h1>Help your Home</h1>
+            <p class="hero-description">Discover trusted household workers for cooking, childcare, cleaning, and more â€” fully verified for your peace of mind.</p>
+
+            <div class="hero-buttons">
+                <a href="{{ url_for('register') }}" class="btn hero-btn-primary">Get started</a>
+                <a href="#how-it-works" class="btn hero-btn-outline">Contact now</a>
+            </div>
+        </div>
+
+            </div>
+
+    <!-- Decorative sparkle -->
+    <div class="hero-sparkle" aria-hidden="true">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 0 L22 18 L40 20 L22 22 L20 40 L18 22 L0 20 L18 18 Z" fill="white" opacity="0.9"/>
+        </svg>
+    </div>
+</section>
+
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     HOW IT WORKS
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<section id="how-it-works" class="hp-section hp-section--white">
+    <div class="container">
+        <div class="hp-section-header">
+            <span class="hp-pill">Simple Steps</span>
+            <h2>How It Works</h2>
+            <p>A simple three-step process to connect you with the right household worker or employer</p>
+        </div>
+
+        <div class="hp-steps">
+            <div class="hp-step-card">
+                <div class="hp-step-num">01</div>
+                <div class="hp-step-icon"><i class='bx bx-user-plus'></i></div>
+                <h3>Register &amp; Profile</h3>
+                <p>Sign up in minutes and create your detailed profile with skills, experience, and preferences.</p>
+            </div>
+
+            <div class="hp-step-arrow"><i class='bx bx-right-arrow-alt'></i></div>
+
+            <div class="hp-step-card hp-step-card--accent">
+                <div class="hp-step-num">02</div>
+                <div class="hp-step-icon"><i class='bx bx-search-alt'></i></div>
+                <h3>Search &amp; Match</h3>
+                <p>Browse verified profiles or post your job requirements to find the perfect match.</p>
+            </div>
+
+            <div class="hp-step-arrow"><i class='bx bx-right-arrow-alt'></i></div>
+
+            <div class="hp-step-card">
+                <div class="hp-step-num">03</div>
+                <div class="hp-step-icon"><i class='bx bx-handshake'></i></div>
+                <h3>Connect &amp; Hire</h3>
+                <p>Message directly, arrange interviews, and hire with confidence through our secure platform.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     FEATURES / WHY UMUKOZI
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<section id="features" class="hp-section hp-section--grey">
+    <div class="container">
+        <div class="hp-section-header">
+            <span class="hp-pill">Platform Features</span>
+            <h2>Why Choose Umukozi?</h2>
+            <p>Rwanda's most trusted platform for household employment â€” built with safety, speed and simplicity in mind</p>
+        </div>
+
+        <div class="hp-features-grid">
+            <!-- Feature card -->
+            <div class="hp-feat-card">
+                <div class="hp-feat-icon hp-feat-icon--orange">
+                    <i class='bx bxs-shield-check'></i>
+                </div>
+                <div class="hp-feat-body">
+                    <h3>Secure &amp; Verified</h3>
+                    <p>All profiles are thoroughly verified with background checks and references so you hire with confidence.</p>
+                </div>
+            </div>
+
+            <div class="hp-feat-card">
+                <div class="hp-feat-icon hp-feat-icon--blue">
+                    <i class='bx bxs-mobile-alt'></i>
+                </div>
+                <div class="hp-feat-body">
+                    <h3>Mobile First</h3>
+                    <p>Fully responsive design optimized for mobile devices â€” access everything from your phone.</p>
+                </div>
+            </div>
+
+            <div class="hp-feat-card">
+                <div class="hp-feat-icon hp-feat-icon--green">
+                    <i class='bx bxs-message-rounded-dots'></i>
+                </div>
+                <div class="hp-feat-body">
+                    <h3>Direct Messaging</h3>
+                    <p>Built-in messaging allows you to communicate directly while maintaining full privacy.</p>
+                </div>
+            </div>
+
+            <div class="hp-feat-card">
+                <div class="hp-feat-icon hp-feat-icon--yellow">
+                    <i class='bx bxs-star'></i>
+                </div>
+                <div class="hp-feat-body">
+                    <h3>Reviews &amp; Ratings</h3>
+                    <p>Transparent ratings from real employers help you make informed decisions every time.</p>
+                </div>
+            </div>
+
+            <div class="hp-feat-card">
+                <div class="hp-feat-icon hp-feat-icon--purple">
+                    <i class='bx bxs-check-circle'></i>
+                </div>
+                <div class="hp-feat-body">
+                    <h3>Verified Workers</h3>
+                    <p>Every worker goes through identity verification and reference checks before joining.</p>
+                </div>
+            </div>
+
+            <div class="hp-feat-card">
+                <div class="hp-feat-icon hp-feat-icon--orange">
+                    <i class='bx bx-trophy'></i>
+                </div>
+                <div class="hp-feat-body">
+                    <h3>Trusted Community</h3>
+                    <p>Thousands of happy families and workers across Rwanda trust Umukozi every day.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     LATEST JOB OPPORTUNITIES
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<section class="hp-section hp-section--white">
+    <div class="container">
+        <div class="hp-section-header">
+            <span class="hp-pill">Open Positions</span>
+            <h2>Latest Job Opportunities</h2>
+            <p>Browse the most recent job postings from verified employers across Rwanda</p>
+        </div>
+
+        {% if recent_jobs %}
+        <div class="hp-jobs-grid">
+            {% for job in recent_jobs %}
+            <div class="hp-job-card">
+                <!-- Top stripe -->
+                <div class="hp-job-stripe"></div>
+                <div class="hp-job-body">
+                    <div class="hp-job-top">
+                        <h3>{{ job.title }}</h3>
+                        {% if job.is_urgent %}
+                        <span class="hp-badge hp-badge--red">Urgent</span>
+                        {% endif %}
+                    </div>
+                    <p class="hp-job-location"><i class='bx bxs-map'></i> {{ job.district or 'Location not specified' }}</p>
+                    <p class="hp-job-desc">{{ job.description[:110] }}{% if job.description|length > 110 %}â€¦{% endif %}</p>
+                    <div class="hp-job-tags">
+                        <span class="hp-tag">{{ job.job_type.replace('_', ' ').title() }}</span>
+                        {% if job.salary_amount %}
+                        <span class="hp-tag hp-tag--green">{{ job.salary_amount }} RWF{% if job.salary_type == 'hourly' %}/hr{% endif %}</span>
+                        {% endif %}
+                        {% if job.end_date %}
+                        <span class="hp-tag hp-tag--amber"><i class='bx bx-time-five'></i> {{ job.end_date.strftime('%b %d, %Y') }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="hp-job-footer">
+                    <span class="hp-job-date">{{ job.created_at.strftime('%b %d, %Y') }}</span>
+                    <a href="{{ url_for('register') }}" class="hp-apply-btn">{{ _('apply_now') }} <i class='bx bx-right-arrow-alt'></i></a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="hp-center-action">
+            <a href="{{ url_for('register') }}" class="hp-outline-btn">{{ _('view_all_jobs') }} <i class='bx bx-right-arrow-alt'></i></a>
+        </div>
+
+        {% else %}
+        <div class="hp-empty-state">
+            <div class="hp-empty-icon">ðŸ’¼</div>
+            <h3>No Job Openings Yet</h3>
+            <p>Check back soon for new job opportunities from verified employers.</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     CTA BANNER
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<section class="hp-cta-banner">
+    <div class="container">
+        <div class="hp-cta-inner">
+            <div class="hp-cta-text">
+                <h2>Ready to Get Started?</h2>
+                <p>Join thousands of Rwandans who have found trusted household workers and employment opportunities through Umukozi.</p>
+            </div>
+            <div class="hp-cta-actions">
+                <a href="{{ url_for('register') }}" class="hp-cta-btn hp-cta-btn--white">Sign Up as Worker</a>
+                <a href="{{ url_for('register') }}" class="hp-cta-btn hp-cta-btn--outline">Sign Up as Employer</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

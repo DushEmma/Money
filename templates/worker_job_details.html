@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+
+{% block title %}Job Details - {{ job.title }} - Umukozi{% endblock %}
+
+{% block content %}
+
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    {% include 'includes/worker_sidebar.html' %}
+
+    <!-- Main Content -->
+    <main class="main-content" style="padding-top: 80px;">
+        <!-- Back Button -->
+        <a href="{{ url_for('worker_find_jobs') }}" style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); text-decoration: none; margin-bottom: 2rem; font-weight: 600; transition: color 0.2s;">
+            <i class='bx bx-arrow-back'></i> Back to Job List
+        </a>
+
+        <div class="grid grid-3" style="gap: 2rem;">
+            <!-- Left Column: Job Details -->
+            <div style="grid-column: span 2;">
+                <div class="card" style="border-radius: 1.5rem; padding: 2.5rem; margin-bottom: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
+                        <div style="display: flex; gap: 1.5rem; align-items: center; position: relative;">
+                            <!-- New Job Indicator -->
+                            {% if job.is_new %}
+                            <div class="new-worker-badge" style="position: absolute; top: -10px; left: -10px; z-index: 10;">NEW</div>
+                            {% endif %}
+                            
+                            <div style="width: 64px; height: 64px; background: #f8fafc; border-radius: 1.25rem; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                                {% if 'house' in job.title|lower %}🏠{% elif 'child' in job.title|lower %}👶{% elif 'clean' in job.title|lower %}✨{% else %}💼{% endif %}
+                            </div>
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                    <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0;">{{ job.title }}</h1>
+                                    {% if job.is_new %}
+                                    <div class="new-worker-badge" style="position: relative; top: auto; left: auto; margin-left: 0.5rem;">NEW</div>
+                                    {% endif %}
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 1rem; color: var(--text-secondary); font-size: 0.875rem;">
+                                    <span><i class='bx bx-buildings'></i> {{ job.employer.company_name or 'Private Household' }}</span>
+                                    <span>•</span>
+                                    <span><i class='bx bx-map'></i> {{ job.district }}, {{ job.province }}</span>
+                                    <span>•</span>
+                                    <span><i class='bx bx-time'></i> Posted {{ job.created_at.strftime('%b %d, %Y') }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% if job.is_urgent %}
+                        <span class="badge" style="background: #fef2f2; color: #ef4444; font-size: 0.75rem; padding: 0.5rem 1rem; border-radius: 2rem; font-weight: 700; border: 1px solid #fee2e2;">Urgent</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="divider" style="margin: 2rem 0;"></div>
+
+                    <section style="margin-bottom: 2.5rem;">
+                        <h3 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;">Job Description</h3>
+                        <p style="color: var(--text-secondary); line-height: 1.8; font-size: 1rem; white-space: pre-wrap;">{{ job.description }}</p>
+                    </section>
+
+                    <section style="margin-bottom: 2.5rem;">
+                        <h3 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;">Requirements</h3>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                            {% if job.skills_required %}
+                                {% for skill in job.skills_required.split(',') %}
+                                <span style="background: #f1f5f9; color: #475569; padding: 0.5rem 1rem; border-radius: 2rem; font-size: 0.875rem; font-weight: 500;">{{ skill.strip() }}</span>
+                                {% endfor %}
+                            {% endif %}
+                            <span style="background: #f1f5f9; color: #475569; padding: 0.5rem 1rem; border-radius: 2rem; font-size: 0.875rem; font-weight: 500;">Experience: {{ job.experience_required or 'Not specified' }}</span>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h3 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;">Schedule & Compensation</h3>
+                        <div class="grid grid-2" style="gap: 1.5rem;">
+                            <div style="padding: 1.25rem; background: #f8fafc; border-radius: 1rem;">
+                                <div style="color: var(--text-secondary); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Working Days</div>
+                                <div style="font-weight: 600;">{{ job.working_days or 'Flexible' }}</div>
+                            </div>
+                            <div style="padding: 1.25rem; background: #f8fafc; border-radius: 1rem;">
+                                <div style="color: var(--text-secondary); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Working Hours</div>
+                                <div style="font-weight: 600;">{{ job.working_hours or 'Flexible' }}</div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Right Column: Sidebar Action -->
+            <div>
+                <div class="card" style="border-radius: 1.5rem; padding: 2rem; position: sticky; top: 2rem;">
+                    <div style="margin-bottom: 2rem;">
+                        <span style="display: block; color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem; font-weight: 600;">Salary Range</span>
+                        <div style="font-size: 1.5rem; font-weight: 800; color: var(--secondary-color);">
+                            {{ job.salary_amount }} RWF <small style="font-size: 0.875rem; opacity: 0.7; font-weight: 500;">/ {{ job.salary_type or 'month' }}</small>
+                        </div>
+                        {% if job.negotiable %}
+                        <span style="font-size: 0.75rem; color: var(--text-secondary); font-style: italic;">* Salary is negotiable</span>
+                        {% endif %}
+                    </div>
+
+                    {% if has_applied %}
+                    <div style="background: #f0fdf4; border: 1px solid #dcfce7; padding: 1.25rem; border-radius: 1rem; text-align: center; margin-bottom: 1.5rem;">
+                        <span style="color: var(--success-color); font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                            <i class='bx bxs-check-circle'></i> Application Submitted
+                        </span>
+                        <p style="font-size: 0.75rem; color: #166534; margin-top: 0.5rem;">The employer will review your profile soon.</p>
+                    </div>
+                    <a href="{{ url_for('worker_applications') }}" class="btn btn-outline" style="width: 100%; border-radius: 1rem;">View My Application</a>
+                    {% else %}
+                    <form action="{{ url_for('worker_apply_job', job_id=job.id) }}" method="POST">
+                        <button type="submit" class="btn btn-primary" style="width: 100%; border-radius: 1rem; padding: 1rem; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--primary-color); border: none; color: white; cursor: pointer;">
+                            <i class='bx bxs-paper-plane'></i> Apply for this Job
+                        </button>
+                    </form>
+                    <p style="font-size: 0.75rem; color: var(--text-secondary); text-align: center; margin-top: 1rem;">
+                        By clicking apply, your Umukozi profile will be shared with the employer.
+                    </p>
+                    {% endif %}
+
+                    <div class="divider" style="margin: 2rem 0;"></div>
+
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
+                            <span style="color: var(--text-secondary);">Job Type</span>
+                            <span style="font-weight: 600;">{{ job.job_type|replace('_', ' ')|title }}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
+                            <span style="color: var(--text-secondary);">Role</span>
+                            <span style="font-weight: 600;">{{ job.title }}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
+                            <span style="color: var(--text-secondary);">Required Skills</span>
+                            <span style="font-weight: 600;">{{ job.skills_required or 'General' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+/* Hide global header from base.html on this page to avoid redundancy and conflicts */
+.header {
+    display: none !important;
+}
+
+/* Notification item styling */
+.notification-item-new {
+    background: rgba(249, 115, 22, 0.05) !important;
+}
+
+.notification-item-read {
+    background: transparent !important;
+}
+</style>
+
+<script>
+function toggleSidebar() {
+    const sidebar = document.querySelector('.modern-sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    if (sidebar) sidebar.classList.toggle('active');
+    if (overlay) overlay.classList.toggle('active');
+}
+
+function closeSidebar() {
+    const sidebar = document.querySelector('.modern-sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    if (sidebar) sidebar.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function toggleNotificationDropdown() {
+    const dropdown = document.getElementById('notificationDropdown');
+    const notificationMenu = dropdown.querySelector('.notification-menu');
+    
+    // Toggle notification dropdown
+    if (notificationMenu.style.display === 'none' || notificationMenu.style.display === '') {
+        notificationMenu.style.display = 'block';
+        // Close profile dropdown if open
+        const profileDropdown = document.getElementById('profileDropdown');
+        const profileMenu = profileDropdown.querySelector('.profile-menu');
+        if (profileMenu) profileMenu.style.display = 'none';
+    } else {
+        notificationMenu.style.display = 'none';
+    }
+}
+
+function toggleProfileDropdown() {
+    const dropdown = document.getElementById('profileDropdown');
+    const profileMenu = dropdown.querySelector('.profile-menu');
+    
+    // Toggle profile dropdown
+    if (profileMenu.style.display === 'none' || profileMenu.style.display === '') {
+        profileMenu.style.display = 'block';
+        // Close notification dropdown if open
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        const notificationMenu = notificationDropdown.querySelector('.notification-menu');
+        if (notificationMenu) notificationMenu.style.display = 'none';
+    } else {
+        profileMenu.style.display = 'none';
+    }
+}
+
+function markAsRead(notifId) {
+    fetch(`/notifications/read/${notifId}`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const item = document.querySelector(`[data-notif-id="${notifId}"]`);
+                if (item) {
+                    item.style.background = 'transparent';
+                }
+            }
+        });
+}
+
+function markAllAsRead() {
+    fetch('/notifications/read-all', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const badge = document.querySelector('.notification-dropdown span[style*="background: var(--danger-color)"]');
+                if (badge) badge.style.display = 'none';
+                const newNotifs = document.querySelectorAll('.notification-item');
+                newNotifs.forEach(n => {
+                    n.style.background = 'transparent';
+                });
+            }
+        });
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(event) {
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    const profileDropdown = document.getElementById('profileDropdown');
+    
+    if (!notificationDropdown.contains(event.target)) {
+        const notificationMenu = notificationDropdown.querySelector('.notification-menu');
+        if (notificationMenu) notificationMenu.style.display = 'none';
+    }
+    
+    if (!profileDropdown.contains(event.target)) {
+        const profileMenu = profileDropdown.querySelector('.profile-menu');
+        if (profileMenu) profileMenu.style.display = 'none';
+    }
+    
+    const sidebar = document.getElementById('sidebar');
+    const toggles = document.querySelectorAll('.mobile-sidebar-toggle');
+    
+    // Check if the click was on any toggle button
+    let clickedOnToggle = false;
+    toggles.forEach(toggle => {
+        if (toggle.contains(event.target)) {
+            clickedOnToggle = true;
+        }
+    });
+    
+    if (window.innerWidth <= 768 && 
+        sidebar &&
+        !sidebar.contains(event.target) && 
+        !clickedOnToggle &&
+        sidebar.classList.contains('active')) {
+        closeSidebar();
+    }
+});
+
+function confirmLogout(event) {
+    event.preventDefault();
+    const logoutUrl = event.currentTarget.getAttribute('data-logout-url');
+    if (confirm('Are you sure you want to logout?')) {
+        window.location.href = logoutUrl;
+    }
+}
+
+function showNotifications() {
+    // Toggle notifications dropdown
+    const existingDropdown = document.getElementById('notifications-dropdown');
+    if (existingDropdown) {
+        existingDropdown.remove();
+        return;
+    }
+    
+    // Close profile menu if open
+    const profileDropdown = document.getElementById('profile-dropdown');
+    if (profileDropdown) {
+        profileDropdown.remove();
+    }
+    
+    // Create notifications dropdown
+    const dropdown = document.createElement('div');
+    dropdown.id = 'notifications-dropdown';
+    dropdown.style.cssText = `
+        position: fixed;
+        top: 70px;
+        right: 120px;
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        width: 320px;
+        max-height: 400px;
+        z-index: 1000;
+        overflow: hidden;
+    `;
+    
+    dropdown.innerHTML = `
+        <div style="padding: 1rem; border-bottom: 1px solid var(--border-color); font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+            <span>Notifications</span>
+            <span style="background: var(--primary-color); color: white; font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 9999px;">2 New</span>
+        </div>
+        <div style="max-height: 300px; overflow-y: auto;">
+            <div style="padding: 1rem; border-bottom: 1px solid var(--light-bg); cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--light-bg)'" onmouseout="this.style.background='white'">
+                <div style="display: flex; gap: 0.75rem; align-items: start;">
+                    <div style="width: 8px; height: 8px; background: var(--primary-color); border-radius: 50%; margin-top: 0.5rem; flex-shrink: 0;"></div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem;">New Job Application</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Your application for "House Cleaning" has been viewed.</div>
+                        <div style="font-size: 0.625rem; color: var(--text-secondary);">2 hours ago</div>
+                    </div>
+                </div>
+            </div>
+            <div style="padding: 1rem; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--light-bg)'" onmouseout="this.style.background='white'">
+                <div style="display: flex; gap: 0.75rem; align-items: start;">
+                    <div style="width: 8px; height: 8px; background: var(--success-color); border-radius: 50%; margin-top: 0.5rem; flex-shrink: 0;"></div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem;">Profile Verified</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Your profile has been successfully verified.</div>
+                        <div style="font-size: 0.625rem; color: var(--text-secondary);">1 day ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="padding: 0.75rem; text-align: center; border-top: 1px solid var(--border-color);">
+            <button style="background: none; border: none; color: var(--primary-color); font-weight: 600; font-size: 0.875rem; cursor: pointer;">View All Notifications</button>
+        </div>
+    `;
+    
+    document.body.appendChild(dropdown);
+    
+    // Close dropdown when clicking outside
+    setTimeout(() => {
+        document.addEventListener('click', function closeDropdown(e) {
+            if (!dropdown.contains(e.target) && !e.target.closest('button[onclick="showNotifications()"]')) {
+                dropdown.remove();
+                document.removeEventListener('click', closeDropdown);
+            }
+        });
+    }, 100);
+}
+
+function showProfileMenu() {
+    // Toggle profile dropdown
+    const existingDropdown = document.getElementById('profile-dropdown');
+    if (existingDropdown) {
+        existingDropdown.remove();
+        return;
+    }
+    
+    // Close notifications if open
+    const notificationsDropdown = document.getElementById('notifications-dropdown');
+    if (notificationsDropdown) {
+        notificationsDropdown.remove();
+    }
+    
+    // Create profile dropdown
+    const dropdown = document.createElement('div');
+    dropdown.id = 'profile-dropdown';
+    dropdown.style.cssText = `
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        width: 250px;
+        z-index: 1000;
+        overflow: hidden;
+    `;
+    
+    dropdown.innerHTML = `
+        <div style="padding: 1rem; border-bottom: 1px solid var(--border-color);">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div class="header-avatar {% if worker and worker.profile_picture %}has-profile-picture{% else %}header-avatar-gradient{% endif %}" style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: bold; flex-shrink: 0; overflow: hidden; color: white;">
+                    {% if worker and worker.profile_picture %}
+                        <img src="{{ url_for('static', filename='uploads/' + worker.profile_picture) }}" style="width: 100%; height: 100%; object-fit: cover;" alt="Profile Picture">
+                    {% else %}
+                        {{ current_user.full_name[0].upper() }}
+                    {% endif %}
+                </div>
+                <div>
+                    <div style="font-weight: 600; font-size: 0.875rem;">{{ current_user.full_name.split()|last }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Worker Account</div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <a href="{{ url_for('worker_complete_profile') }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; text-decoration: none; color: inherit; transition: background 0.2s;" onmouseover="this.style.background='var(--light-bg)'" onmouseout="this.style.background='white'">
+                <i class='bx bx-user' style="font-size: 1.125rem;"></i>
+                <span>My Profile</span>
+            </a>
+            <a href="{{ url_for('worker_settings') }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; text-decoration: none; color: inherit; transition: background 0.2s;" onmouseover="this.style.background='var(--light-bg)'" onmouseout="this.style.background='white'">
+                <i class='bx bx-cog' style="font-size: 1.125rem;"></i>
+                <span>Settings</span>
+            </a>
+            <div style="border-top: 1px solid var(--border-color); margin: 0.5rem 0;"></div>
+            <a href="javascript:void(0)" onclick="confirmLogout(event)" data-logout-url="{{ url_for('logout') }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; text-decoration: none; color: var(--danger-color); transition: background 0.2s;" onmouseover="this.style.background='var(--light-bg)'" onmouseout="this.style.background='white'">
+                <i class='bx bx-log-out' style="font-size: 1.125rem;"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    `;
+    
+    document.body.appendChild(dropdown);
+    
+    // Close dropdown when clicking outside
+    setTimeout(() => {
+        document.addEventListener('click', function closeDropdown(e) {
+            if (!dropdown.contains(e.target) && !e.target.closest('button[onclick="showProfileMenu()"]')) {
+                dropdown.remove();
+                document.removeEventListener('click', closeDropdown);
+            }
+        });
+    }, 100);
+}
+</script>
+{% endblock %}

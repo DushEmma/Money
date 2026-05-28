@@ -1,0 +1,617 @@
+{% extends "base.html" %}
+
+{% block title %}Find Workers - Umukozi{% endblock %}
+
+{% block content %}
+
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    {% include 'includes/employer_sidebar.html' %}
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <div class="card welcome-card-premium" style="margin-bottom: 2.5rem; padding: 2.5rem; border: none; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); position: relative; overflow: hidden;">
+            <div class="welcome-card-bg-decoration"></div>
+            <div style="position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2rem;">
+                <div>
+                    <span class="hp-pill" style="background: rgba(249, 115, 22, 0.2); color: #fb923c; margin-bottom: 1rem; display: inline-block;">Talent Discovery</span>
+                    <h1 style="margin-bottom: 0.75rem; color: white; font-size: 2.25rem;">{{ _('find_workers_title') }}</h1>
+                    <p style="color: rgba(255, 255, 255, 0.7); margin: 0; font-size: 1.1rem; max-width: 500px;">
+                        {{ _('discover_workers') }}
+                    </p>
+                </div>
+                <div>
+                    <button class="btn hero-btn-primary" onclick="toggleFilters()" style="padding: 1rem 2rem;">
+                        <i class='bx bx-filter-alt' style="margin-right: 0.5rem;"></i> {{ _('filters') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="card" id="filtersSection" style="margin-bottom: 2rem; display: none;">
+            <h3 style="margin-bottom: 1rem;">{{ _('search_filters') }}</h3>
+            <div class="grid grid-3">
+                <div class="form-group">
+                    <label class="form-label">{{ _('skills') }}</label>
+                    <input type="text" class="form-control" placeholder="e.g., Cleaning, Cooking, Childcare">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ _('location') }}</label>
+                    <select class="form-control">
+                        <option value="">{{ _('all_locations') }}</option>
+                        <option value="kigali">Kigali</option>
+                        <option value="northern">Northern Province</option>
+                        <option value="southern">Southern Province</option>
+                        <option value="eastern">Eastern Province</option>
+                        <option value="western">Western Province</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ _('availability') }}</label>
+                    <select class="form-control">
+                        <option value="">{{ _('all_availability') if _('all_availability') != 'all_availability' else 'All Availability' }}</option>
+                        <option value="available">Available</option>
+                        <option value="busy">Busy</option>
+                        <option value="unavailable">Unavailable</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button class="btn btn-primary">{{ _('apply_filters') }}</button>
+                <button class="btn btn-outline" onclick="clearFilters()">{{ _('clear') }}</button>
+            </div>
+        </div>
+
+        <!-- Worker Listings Grid -->
+        <div style="margin-bottom: 3rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+                <h3 style="font-weight: 800; margin: 0;">{{ _('available_workers', count=workers|length) }}</h3>
+                <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                    <label style="font-size: 0.875rem; color: var(--text-secondary);">{{ _('sort_by') }}</label>
+                    <select class="form-control" style="width: auto; border-radius: 0.75rem; height: 38px;">
+                        <option>{{ _('most_recent') }}</option>
+                        <option>{{ _('rating_high_low') }}</option>
+                        <option>{{ _('experience_high_low') }}</option>
+                        <option>{{ _('verified_first') }}</option>
+                    </select>
+                </div>
+            </div>
+            
+            {% if workers_with_contact_status %}
+                <div class="workers-grid">
+                {% for worker_data in workers_with_contact_status %}
+                {% set worker = worker_data.worker %}
+                <div class="card worker-card" style="position: relative;">
+                    <!-- New Worker Indicator -->
+                    {% if worker_data.is_new %}
+                    <div class="new-worker-badge">NEW</div>
+                    {% endif %}
+                    
+                    <!-- Avatar Section -->
+                    <div class="worker-avatar {% if worker.profile_picture %}has-profile-picture{% else %}default-avatar{% endif %}">
+                        {% if worker.profile_picture %}
+                            <img src="{{ url_for('static', filename='uploads/' + worker.profile_picture) }}" alt="{{ worker.user.full_name }}">
+                        {% else %}
+                            {{ worker.user.full_name[0].upper() }}
+                        {% endif %}
+                    </div>
+
+                    <!-- Name & Status -->
+                    <div style="margin-bottom: 0.75rem;">
+                        <h4 class="worker-name">{{ worker.user.full_name }}</h4>
+                        <div class="worker-status-row">
+                            <span class="badge badge-{{ 'success' if worker.availability_status == 'available' else 'warning' if worker.availability_status == 'busy' else 'secondary' }}">
+                                {{ worker.availability_status|title }}
+                            </span>
+                            <div class="worker-rating">
+                                <i class='bx bxs-star'></i>
+                                <span>{% if worker.average_rating %}{{ "%.1f"|format(worker.average_rating) }}{% else %}5.0{% endif %} ({{ worker.received_reviews|length }} reviews)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Info Row -->
+                    <div class="worker-info-row">
+                        <span class="worker-info-item">
+                            <i class='bx bxs-map' style="color: var(--danger-color);"></i> {{ worker.district or 'Kigali' }}
+                        </span>
+                        <span class="worker-info-item">
+                            <i class='bx bxs-briefcase' style="color: var(--primary-color);"></i> {{ worker.experience_years or 0 }} yr experience
+                        </span>
+                    </div>
+
+                    <!-- Skills Section -->
+                    <div style="margin-bottom: 1rem;">
+                        <div style="font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">Skills</div>
+                        <div class="worker-skills">
+                            {% if worker.skills %}
+                                {% for skill in worker.skills.split(',')[:3] %}
+                                    <span class="skill-tag">{{ skill.strip() }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Statistics Section -->
+                    <div style="margin-bottom: 1rem; padding: 0.75rem; background: #f8fafc; border-radius: 0.5rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.8rem;">
+                            <div style="text-align: center;">
+                                <div style="font-weight: 700; color: var(--text-primary);">{{ worker.received_reviews|length }}</div>
+                                <div style="color: var(--text-secondary);">Jobs Completed</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-weight: 700; color: var(--text-primary);">{% if worker.average_rating %}{{ "%.1f"|format(worker.average_rating) }}{% else %}5.0{% endif %}</div>
+                                <div style="color: var(--text-secondary);">Rating</div>
+                            </div>
+                        </div>
+                        {% if worker.is_verified %}
+                        <div style="text-align: center; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e2e8f0;">
+                            <span style="background: #ecfdf5; color: #065f46; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">
+                                ✓ Trusted Worker Verified
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="worker-actions">
+                        <button class="btn btn-outline btn-sm" onclick="viewWorkerProfile({{ worker.id }})" style="flex: 1;">
+                            <i class='bx bx-user' style="margin-right: 0.25rem;"></i> View Profile
+                        </button>
+                        
+                        {% if worker_data.has_access %}
+                            <button onclick="openWhatsApp('{{ worker_data.phone }}')" class="btn btn-sm" style="flex: 1;" title="Contact">
+                                <i class='bx bxs-phone' style="margin-right: 0.25rem;"></i> Contact
+                            </button>
+                        {% else %}
+                            <button onclick="window.location.href='{{ url_for('payment_form_mobile') }}';" class="btn btn-primary btn-sm" style="flex: 1;">
+                                <i class='bx bxs-lock-open' style="margin-right: 0.25rem;"></i> Unlock Contact
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 4rem; background: var(--white); border-radius: 2rem; border: 1px dashed var(--border-color);">
+                    <div style="font-size: 3.5rem; margin-bottom: 1rem;">🔍</div>
+                    <h3 style="font-weight: 700;">{{ _('no_workers_found') }}</h3>
+                    <p style="color: var(--text-secondary);">{{ _('no_workers_desc') }}</p>
+                    <button class="btn btn-primary" style="margin-top: 1.5rem;" onclick="clearFilters()">{{ _('clear_all_filters') }}</button>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Pagination -->
+        {% if workers %}
+        <div style="display: flex; justify-content: center; margin-top: 2rem;">
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn btn-outline btn-sm" disabled>{{ _('previous') }}</button>
+                <button class="btn btn-primary btn-sm">1</button>
+                <button class="btn btn-outline btn-sm">2</button>
+                <button class="btn btn-outline btn-sm">3</button>
+                <button class="btn btn-outline btn-sm">{{ _('next') }}</button>
+            </div>
+        </div>
+        {% endif %}
+    </main>
+</div>
+
+<!-- Worker Profile Modal -->
+<script>
+/* eslint-disable */
+// Jinja2 template - IDE may show false positive syntax errors
+window.workersDataPayload = [
+    {% for worker_data in workers_with_contact_status %}
+    {
+        "id": {{ worker_data.worker.id | tojson | safe }},
+        "name": {{ worker_data.worker.user.full_name | tojson | safe }},
+        "phone": {{ worker_data.phone | tojson | safe }},
+        "hasAccess": {{ worker_data.has_access | tojson | safe }},
+        "profile_picture": {{ (worker_data.worker.profile_picture or '') | tojson | safe }},
+        "id_photo": {{ (worker_data.worker.id_photo or '') | tojson | safe }},
+        "national_id_number": {{ (worker_data.worker.national_id_number or '') | tojson | safe }},
+        "bio": {{ (worker_data.worker.bio or 'No bio available.') | tojson | safe }},
+        "skills": {{ (worker_data.worker.skills or '') | tojson | safe }},
+        "experience_years": {{ worker_data.worker.experience_years or 0 | tojson | safe }},
+        "experience_details": {{ (worker_data.worker.experience_details or '') | tojson | safe }},
+        "hourly_rate": {{ worker_data.worker.hourly_rate or 'null' | tojson | safe }},
+        "district": {{ (worker_data.worker.district or '') | tojson | safe }},
+        "province": {{ (worker_data.worker.province or '') | tojson | safe }},
+        "worker_phone": {{ worker_data.worker.user.phone | tojson | safe }},
+        "is_verified": {{ worker_data.worker.is_verified | tojson | safe }},
+        "availability_status": {{ (worker_data.worker.availability_status or 'available') | tojson | safe }}, // eslint-disable-line
+        "is_new": {{ worker_data.is_new | tojson | safe }}, // eslint-disable-line
+        "reviews": [
+            {% for review in worker_data.worker.received_reviews %}
+            {
+                "rating": {{ review.rating | tojson | safe }},
+                "comment": {{ review.comment | tojson | safe }}
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ]
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+/* eslint-enable */
+</script>
+
+<div id="workerProfileModal" class="modal-overlay" style="display: none;" onclick="closeWorkerProfile(event)">
+    <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto; border-radius: 1.5rem;" onclick="event.stopPropagation()">
+        <div class="modal-header" style="padding: 2rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0;">Worker Profile</h3>
+            <button onclick="closeWorkerProfile()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);">✕</button>
+        </div>
+        <div id="workerProfileContent" style="padding: 2rem;">
+            <!-- Profile content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- ID Photo Full Size Modal -->
+<div id="idPhotoModal" class="modal-overlay" style="display: none;" onclick="closeIdPhotoModal(event)">
+    <div class="modal-content" style="max-width: 90%; max-height: 90vh; background: transparent; box-shadow: none; border-radius: 0;" onclick="event.stopPropagation()">
+        <div style="position: relative; display: flex; align-items: center; justify-content: center; height: 90vh;">
+            <img id="idPhotoFullSize" src="" alt="ID Card Full Size" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 0.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+            <button onclick="closeIdPhotoModal()" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0, 0, 0, 0.8); color: white; border: none; font-size: 1.5rem; cursor: pointer; padding: 0.75rem; border-radius: 50%; width: 3rem; height: 3rem; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);">✕</button>
+        </div>
+    </div>
+</div>
+
+<script>
+
+function toggleFilters() {
+    const filtersSection = document.getElementById('filtersSection');
+    filtersSection.style.display = filtersSection.style.display === 'none' ? 'block' : 'none';
+}
+
+function clearFilters() {
+    alert('Filters cleared! Showing all workers.');
+    toggleFilters();
+}
+
+function viewWorkerProfile(workerId) {
+    const workers = window.workersDataPayload || [];
+    
+    const worker = workers.find(w => w.id === workerId);
+    if (!worker) return;
+    
+    const profileContent = document.getElementById('workerProfileContent');
+    profileContent.innerHTML = `
+        <!-- Profile Header -->
+        <div style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem; color: white;">
+            <div style="display: flex; align-items: center; gap: 2rem;">
+                <div class="worker-avatar ${worker.profile_picture ? 'has-profile-picture' : 'default-avatar'}" style="width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: bold; flex-shrink: 0; overflow: hidden; background: white; color: #6366f1; border: 4px solid rgba(255,255,255,0.3);">
+                    ${worker.profile_picture ? 
+                        `<img src="/static/uploads/${worker.profile_picture}" style="width: 100%; height: 100%; object-fit: cover;" alt="${worker.name}">` : 
+                        worker.name.charAt(0).toUpperCase()
+                    }
+                </div>
+                <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; position: relative;">
+                        <h2 style="margin: 0; font-size: 2rem; font-weight: 800;">${worker.name}</h2>
+                        ${worker.is_verified ? '<span style="background: rgba(16, 185, 129, 0.2); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; font-weight: 600;">✓ Verified</span>' : ''}
+                        ${worker.is_new ? '<div class="new-worker-badge" style="position: relative; top: auto; right: auto; margin-left: 0.5rem;">NEW</div>' : ''}
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1rem; opacity: 0.9;">
+                        <span style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class='bx bxs-map'></i> ${worker.district || 'Location not specified'}
+                        </span>
+                        <span style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class='bx bxs-briefcase'></i> ${worker.experience_years} years experience
+                        </span>
+                        <span style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class='bx bxs-star'></i> ${worker.reviews.length > 0 ? parseFloat(worker.reviews.reduce((acc, r) => acc + r.rating, 0) / worker.reviews.length).toFixed(1) : '5.0'} (${worker.reviews.length} reviews)
+                        </span>
+                    </div>
+                    <span class="badge badge-${worker.availability_status === 'available' ? 'success' : worker.availability_status === 'busy' ? 'warning' : 'secondary'}" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
+                        ${worker.availability_status.charAt(0).toUpperCase() + worker.availability_status.slice(1)}
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contact Information -->
+        <div style="margin-bottom: 2rem;">
+            <h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Contact Information</h4>
+            <div style="background: #f8fafc; border-radius: 1rem; padding: 1.5rem; border: 1px solid #e2e8f0;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: white; border-radius: 0.75rem; border: 1px solid #e2e8f0;">
+                            <div style="width: 40px; height: 40px; background: #6366f1; color: white; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">
+                                <i class='bx bxs-phone'></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Phone Number</div>
+                                <div style="font-weight: 700; color: #1e293b;">
+                                    ${worker.hasAccess ? worker.phone : '🔒 Hidden (Payment Required)'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: white; border-radius: 0.75rem; border: 1px solid #e2e8f0;">
+                            <div style="width: 40px; height: 40px; background: #10b981; color: white; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">
+                                <i class='bx bxs-envelope'></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Email Address</div>
+                                <div style="font-weight: 700; color: #1e293b;">
+                                    ${worker.hasAccess ? (worker.email || 'Not provided') : '🔒 Hidden (Payment Required)'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ${worker.hourly_rate ? `
+                <div style="margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-radius: 0.75rem; color: white; text-align: center;">
+                    <div style="font-size: 0.875rem; opacity: 0.9;">Expected Hourly Rate</div>
+                    <div style="font-size: 1.5rem; font-weight: 800;">💰 ${worker.hourly_rate} RWF/hour</div>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+
+        <!-- National ID Section - Prominently displayed -->
+        <div style="margin-bottom: 2rem;">
+            <h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Identification</h4>
+            <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 1rem; padding: 1.5rem; border: 2px solid #f59e0b; position: relative; overflow: hidden;">
+                <div style="position: absolute; top: -10px; right: -10px; width: 60px; height: 60px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="bx bx-id-card" style="font-size: 24px; color: white;"></i></div>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 50px; height: 50px; background: rgba(255,255,255,0.2); border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                        <i class="bx bx-fingerprint" style="font-size: 28px; color: white;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 0.875rem; color: rgba(255,255,255,0.9); font-weight: 600; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">National ID Number</div>
+                        <div style="font-size: 1.25rem; font-weight: 800; color: white; font-family: 'Courier New', monospace; letter-spacing: 0.05em; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            ${worker.hasAccess && worker.national_id_number ? worker.national_id_number : worker.hasAccess ? 'Not provided' : '🔒 Verify identity to view'}
+                        </div>
+                        ${worker.national_id_number && worker.hasAccess ? `
+                        <div style="margin-top: 0.5rem; padding: 0.25rem 0.75rem; background: rgba(16, 185, 129, 0.2); border-radius: 0.5rem; display: inline-block;">
+                            <span style="color: #d1fae5; font-size: 0.75rem; font-weight: 600;">✓ Verified Identity</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- About Section -->
+        <div style="margin-bottom: 2rem;">
+            <h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">About Professional</h4>
+            <div style="background: white; border-radius: 1rem; padding: 1.5rem; border: 1px solid #e2e8f0;">
+                <p style="line-height: 1.7; color: #475569; margin: 0;">${worker.bio || 'This professional has not provided a detailed bio yet, but they are ready to serve with their expertise and experience.'}</p>
+            </div>
+        </div>
+
+        <!-- Skills & Experience Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+            ${worker.skills ? `
+            <div>
+                <h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Core Skills</h4>
+                <div style="background: white; border-radius: 1rem; padding: 1.5rem; border: 1px solid #e2e8f0;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        ${worker.skills.split(',').map(skill => 
+                            `<span class="skill-tag">${skill.trim()}</span>`
+                        ).join('')}
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+            
+            <div>
+                <h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Experience</h4>
+                <div style="background: white; border-radius: 1rem; padding: 1.5rem; border: 1px solid #e2e8f0;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2.5rem; font-weight: 800; color: #6366f1; margin-bottom: 0.5rem;">${worker.experience_years || 0}</div>
+                        <div style="color: #64748b; font-weight: 600;">Years of Experience</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviews Section -->
+        ${worker.reviews.length > 0 ? `
+        <div style="margin-bottom: 2rem;">
+            <h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Client Reviews (${worker.reviews.length})</h4>
+            <div style="background: white; border-radius: 1rem; padding: 1.5rem; border: 1px solid #e2e8f0;">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    ${worker.reviews.slice(0, 3).map(review => `
+                        <div style="padding: 1rem; background: #f8fafc; border-radius: 0.75rem; border-left: 4px solid #6366f1;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <div style="color: #fbbf24;">
+                                    ${'⭐'.repeat(review.rating)}${'☆'.repeat(5-review.rating)}
+                                </div>
+                                <span style="color: #64748b; font-size: 0.875rem; font-weight: 600;">${review.rating}/5</span>
+                            </div>
+                            <p style="margin: 0; font-size: 0.9rem; color: #475569; line-height: 1.5;">${review.comment}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+        ` : ''}
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 1rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0;">
+            ${worker.hasAccess ? `
+            <button onclick="openWhatsApp('${worker.phone}')" class="btn" style="flex: 1; background: #25D366; color: white; padding: 1rem; font-weight: 700; border: none; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                <i class='bx bxl-whatsapp' style="font-size: 1.25rem;"></i> WhatsApp
+            </button>
+            <button onclick="makeCall('${worker.phone}')" class="btn btn-primary" style="flex: 1; padding: 1rem; font-weight: 700; border: none; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                <i class='bx bxs-phone' style="font-size: 1.25rem;"></i> Call Now
+            </button>
+            ` : `
+            <button onclick="window.location.href='{{ url_for('payment_form_mobile') }}'" class="btn btn-primary" style="flex: 1; padding: 1rem; font-weight: 700; border: none; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                <i class='bx bxs-lock-open' style="font-size: 1.25rem;"></i> Unlock Contact Details
+            </button>
+            `}
+        </div>
+    `;
+    
+    document.getElementById('workerProfileModal').style.display = 'flex';
+}
+
+function closeWorkerProfile(event) {
+    if (event && event.target !== event.currentTarget) {
+        return; // Don't close if clicking inside the modal content
+    }
+    document.getElementById('workerProfileModal').style.display = 'none';
+}
+
+function contactWorker(workerId) {
+    alert('Contact worker feature coming soon! Worker ID: ' + workerId);
+}
+
+function saveWorker(workerId) {
+    alert('Save worker feature coming soon! Worker ID: ' + workerId);
+}
+
+function openIdPhotoModal(idPhoto) {
+    if (!idPhoto) return;
+    
+    const modal = document.getElementById('idPhotoModal');
+    const fullSizeImg = document.getElementById('idPhotoFullSize');
+    fullSizeImg.src = '/static/uploads/' + idPhoto;
+    modal.style.display = 'flex';
+}
+
+function closeIdPhotoModal(event) {
+    if (event && event.target !== event.currentTarget) {
+        return; // Don't close if clicking inside the modal content
+    }
+    document.getElementById('idPhotoModal').style.display = 'none';
+}
+
+function toggleFilters() {
+    const filtersSection = document.getElementById('filtersSection');
+    if (filtersSection.style.display === 'none') {
+        filtersSection.style.display = 'block';
+    } else {
+        filtersSection.style.display = 'none';
+    }
+}
+
+function clearFilters() {
+    // Clear all filter inputs
+    document.querySelectorAll('input[type="text"], select').forEach(input => {
+        input.value = '';
+    });
+    // Reload page or fetch filtered results
+    window.location.reload();
+}
+
+// Phone Number formatting and contacting handlers
+function formatRwandanPhone(phone) {
+    if (!phone) return '';
+    let num = phone.replace(/[\s\-()+]/g, '');
+    if (num.startsWith('0')) {
+        num = '250' + num.substring(1);
+    } else if (!num.startsWith('250')) {
+        num = '250' + num;
+    }
+    return num;
+}
+
+function openWhatsApp(phone) {
+    if (!phone) {
+        alert('Worker phone number is not available.');
+        return;
+    }
+    const formattedPhone = phone.replace(/[^0-9]/g, '');
+    const waNumber = formattedPhone.startsWith('250') ? formattedPhone : formattedPhone.replace(/^0+/, '');
+    window.open('https://wa.me/' + waNumber, '_blank');
+}
+
+function makeCall(phone) {
+    if (!phone) {
+        alert('Worker phone number is not available.');
+        return;
+    }
+    const cleaned = phone.replace(/[^0-9+]/g, '');
+    window.location.href = 'tel:' + cleaned;
+}
+
+</script>
+
+<style>
+
+/* Mobile sidebar toggle visibility */
+@media (max-width: 768px) {
+    .mobile-sidebar-toggle {
+        display: flex !important;
+    }
+}
+
+/* Dropdown menu styles */
+.notification-dropdown .dropdown-menu,
+.profile-dropdown .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    min-width: 280px;
+    max-width: 350px;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    margin-top: 0.5rem;
+}
+
+.notification-dropdown.active .dropdown-menu,
+.profile-dropdown.active .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-menu-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.dropdown-menu-item:hover {
+    background-color: var(--gray-50);
+}
+
+.dropdown-menu-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 0.5rem 0;
+}
+
+/* Sidebar overlay styles */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+</style>
+{% endblock %}

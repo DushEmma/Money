@@ -1,0 +1,601 @@
+{% extends "base.html" %}
+
+{% block title %}Secure Payment - Umukozi{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    {% if current_user.user_type == 'worker' %}
+        {% include 'includes/worker_sidebar.html' %}
+    {% elif current_user.user_type == 'employer' %}
+        {% include 'includes/employer_sidebar.html' %}
+    {% endif %}
+
+    <main class="main-content">
+        <section class="payment-container">
+            <div class="payment-wrapper">
+                <!-- Header Section -->
+                <div class="payment-header">
+                    <div class="payment-badge">
+                        <i class='bx bx-lock-alt'></i>
+                        <span>Secure Payment</span>
+                    </div>
+                    <h1>Complete Your Payment</h1>
+                    <p>Pay securely using mobile money or bank transfer</p>
+                </div>
+
+                <!-- Payment Summary Card -->
+                <div class="payment-summary-card">
+                    <div class="summary-icon">
+                        <i class='bx bx-receipt'></i>
+                    </div>
+                    <div class="summary-details">
+                        <div class="summary-item">
+                            <span class="label">Service</span>
+                            <span class="value">Connection Fee</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Amount</span>
+                            <span class="value amount">RWF 10,000</span>
+                        </div>
+                        <div class="summary-divider"></div>
+                        <div class="summary-total">
+                            <span class="label">Total to Pay</span>
+                            <span class="value total">RWF 10,000</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Form -->
+                <form method="POST" action="{{ url_for('payment_submit') }}" enctype="multipart/form-data" class="modern-payment-form">
+                    <!-- Payment Method Selection -->
+                    <div class="form-section">
+                        <h3>Choose Payment Method</h3>
+                        <div class="payment-methods-grid">
+                            <label class="payment-method-card">
+                                <input type="radio" name="payment_method" value="momo" required>
+                                <div class="method-content">
+                                    <div class="method-icon momo">
+                                        <i class='bx bx-mobile-alt'></i>
+                                    </div>
+                                    <div class="method-info">
+                                        <strong>MoMo</strong>
+                                        <span>MTN Rwanda</span>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="payment-method-card">
+                                <input type="radio" name="payment_method" value="airtel" required>
+                                <div class="method-content">
+                                    <div class="method-icon airtel">
+                                        <i class='bx bx-mobile-alt'></i>
+                                    </div>
+                                    <div class="method-info">
+                                        <strong>Airtel Money</strong>
+                                        <span>Airtel Rwanda</span>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="payment-method-card">
+                                <input type="radio" name="payment_method" value="bank" required>
+                                <div class="method-content">
+                                    <div class="method-icon bank">
+                                        <i class='bx bx-building'></i>
+                                    </div>
+                                    <div class="method-info">
+                                        <strong>Bank Transfer</strong>
+                                        <span>Local Banks</span>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Payment Details -->
+                    <div class="form-section">
+                        <h3>Payment Details</h3>
+                        
+                        <div class="form-group">
+                            <label for="payer_name">Your Full Name *</label>
+                            <input type="text" id="payer_name" name="payer_name" placeholder="Enter your full name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone_number">Phone Number *</label>
+                            <input type="tel" id="phone_number" name="phone_number" placeholder="0788123456" pattern="[0-9]{10}" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="transaction_id">Transaction ID *</label>
+                            <input type="text" id="transaction_id" name="transaction_id" placeholder="Enter transaction reference" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="screenshot">Payment Receipt *</label>
+                            <div class="file-upload-area" id="fileUploadArea">
+                                <input type="file" id="screenshot" name="screenshot" accept="image/*" required>
+                                <div class="upload-content">
+                                    <i class='bx bx-cloud-upload'></i>
+                                    <p>Click to upload or drag and drop</p>
+                                    <span>PNG, JPG up to 10MB</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn">
+                            <i class='bx bx-check-shield'></i>
+                            Submit Payment Securely
+                        </button>
+                        <button type="button" class="cancel-btn" onclick="history.back()">
+                            <i class='bx bx-arrow-back'></i>
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Security Features -->
+                <div class="security-features">
+                    <div class="feature-item">
+                        <i class='bx bx-shield-check'></i>
+                        <span>256-bit SSL Encryption</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class='bx bx-time-five'></i>
+                        <span>Instant Processing</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class='bx bx-certification'></i>
+                        <span>Trusted & Safe</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<style>
+.payment-container {
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.payment-wrapper {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.payment-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: white;
+}
+
+.payment-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.payment-header h1 {
+    font-size: 2rem;
+    margin: 0 0 0.5rem;
+    font-weight: 700;
+}
+
+.payment-header p {
+    opacity: 0.9;
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.payment-summary-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.summary-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.summary-details {
+    flex: 1;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.summary-item .label {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.summary-item .value {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.summary-item .amount {
+    color: #667eea;
+    font-size: 1.1rem;
+}
+
+.summary-divider {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 1rem 0;
+}
+
+.summary-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.summary-total .label {
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.summary-total .total {
+    font-weight: 700;
+    color: #667eea;
+    font-size: 1.3rem;
+}
+
+.modern-payment-form {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.form-section {
+    margin-bottom: 2rem;
+}
+
+.form-section:last-child {
+    margin-bottom: 0;
+}
+
+.form-section h3 {
+    font-size: 1.2rem;
+    margin: 0 0 1.5rem;
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.payment-methods-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.payment-method-card {
+    position: relative;
+    cursor: pointer;
+}
+
+.payment-method-card input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.method-content {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.payment-method-card:hover .method-content {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+}
+
+.payment-method-card input:checked + .method-content {
+    border-color: #667eea;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+}
+
+.method-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.75rem;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.method-icon.momo {
+    background: linear-gradient(135deg, #ffb800, #ff6b35);
+}
+
+.method-icon.airtel {
+    background: linear-gradient(135deg, #ff0000, #cc0000);
+}
+
+.method-icon.bank {
+    background: linear-gradient(135deg, #1e40af, #3730a3);
+}
+
+.method-info strong {
+    display: block;
+    color: #1f2937;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.method-info span {
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.form-group input[type="text"],
+.form-group input[type="tel"] {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.file-upload-area {
+    position: relative;
+    border: 2px dashed #e5e7eb;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #f9fafb;
+}
+
+.file-upload-area:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.file-upload-area input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.upload-content i {
+    font-size: 3rem;
+    color: #667eea;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.upload-content p {
+    margin: 0 0 0.5rem;
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.upload-content span {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.submit-btn,
+.cancel-btn {
+    flex: 1;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.submit-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+}
+
+.cancel-btn {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.cancel-btn:hover {
+    background: #e5e7eb;
+}
+
+.security-features {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: white;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.feature-item i {
+    font-size: 1.2rem;
+}
+
+@media (max-width: 768px) {
+    .payment-container {
+        padding: 1rem;
+    }
+    
+    .payment-wrapper {
+        padding: 1.5rem;
+    }
+    
+    .payment-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .payment-summary-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .payment-methods-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .security-features {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileUploadArea = document.getElementById('fileUploadArea');
+    const fileInput = document.getElementById('screenshot');
+    const uploadContent = fileUploadArea.querySelector('.upload-content');
+    
+    // Handle file selection
+    fileInput.addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            const fileName = e.target.files[0].name;
+            uploadContent.innerHTML = `
+                <i class='bx bx-check-circle'></i>
+                <p>${fileName}</p>
+                <span>Click to change file</span>
+            `;
+            fileUploadArea.style.borderColor = '#10b981';
+            fileUploadArea.style.background = 'rgba(16, 185, 129, 0.05)';
+        }
+    });
+    
+    // Handle drag and drop
+    fileUploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        fileUploadArea.style.borderColor = '#667eea';
+        fileUploadArea.style.background = 'rgba(102, 126, 234, 0.1)';
+    });
+    
+    fileUploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        if (!fileInput.files.length) {
+            fileUploadArea.style.borderColor = '#e5e7eb';
+            fileUploadArea.style.background = '#f9fafb';
+        }
+    });
+    
+    fileUploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            const event = new Event('change', { bubbles: true });
+            fileInput.dispatchEvent(event);
+        }
+    });
+    
+    // Form validation
+    const form = document.querySelector('.modern-payment-form');
+    form.addEventListener('submit', function(e) {
+        const phoneInput = document.getElementById('phone_number');
+        const phonePattern = /^[0-9]{10}$/;
+        
+        if (!phonePattern.test(phoneInput.value)) {
+            e.preventDefault();
+            alert('Please enter a valid 10-digit phone number.');
+            phoneInput.focus();
+            return;
+        }
+        
+        const fileInput = document.getElementById('screenshot');
+        if (!fileInput.files.length) {
+            e.preventDefault();
+            alert('Please upload a payment receipt.');
+            return;
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,1215 @@
+{% extends "base.html" %}
+
+{% block title %}Employer Dashboard - Umukozi{% endblock %}
+
+{% block content %}
+
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    {% include 'includes/employer_sidebar.html' %}
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Floating Payment Reminder Banner -->
+        {% if not has_verified_payments %}
+        <div id="paymentReminderBanner" class="floating-payment-banner" style="display: none;"
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 350px;
+            animation: slideInPulse 3s ease-in-out infinite;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        " onclick="showPlatformPaymentModal()">
+            <button onclick="event.stopPropagation(); dismissPaymentBanner()" style="
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                background: rgba(255,255,255,0.2);
+                border: none;
+                color: white;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 16px;
+                transition: background 0.2s;
+            " onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">×</button>
+            
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="
+                    background: rgba(255,255,255,0.2);
+                    width: 50px;
+                    height: 50px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    animation: bounce 2s infinite;
+                ">
+                    <i class='bx bx-money' style="font-size: 24px; color: white;"></i>
+                </div>
+                <div style="flex: 1;">
+                    <h4 style="margin: 0 0 0.25rem 0; font-size: 1rem; font-weight: 600;">{{ _('unlock_worker_contacts') }}</h4>
+                    <p style="margin: 0; font-size: 0.85rem; opacity: 0.9; line-height: 1.3;">
+                        {{ _('pay_to_connect', amount='10,000') }}
+                    </p>
+                </div>
+            </div>
+            
+            <div style="margin-top: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span style="
+                    background: rgba(255,255,255,0.2);
+                    padding: 0.25rem 0.5rem;
+                    border-radius: 20px;
+                    font-size: 0.75rem;
+                    font-weight: 500;
+                ">
+                    <i class='bx bx-time-five' style="margin-right: 0.25rem;"></i>{{ _('limited_time') }}
+                </span>
+                <span style="font-size: 0.75rem; opacity: 0.8;">{{ _('click_to_pay') }}</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Welcome Header -->
+        <div class="card welcome-card-premium" style="margin-bottom: 2.5rem; padding: 2.5rem; border: none; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); position: relative; overflow: hidden;">
+            <div class="welcome-card-bg-decoration"></div>
+            <div style="position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2rem;">
+                <div>
+                    <span class="hp-pill" style="background: rgba(249, 115, 22, 0.2); color: #fb923c; margin-bottom: 1rem; display: inline-block;">Dashboard Overview</span>
+                    <h1 style="margin-bottom: 0.75rem; color: white; font-size: 2.25rem;">{{ _('welcome_back_user', name=current_user.full_name) }}</h1>
+                    <p style="color: rgba(255, 255, 255, 0.7); margin: 0; font-size: 1.1rem; max-width: 500px;">
+                        Manage your household services, track applications, and find top-rated workers for your home.
+                    </p>
+                </div>
+                <div>
+                    <a href="#" class="btn hero-btn-primary" style="min-width: 200px; padding: 1rem 2rem;" onclick="postNewJob()">
+                        <i class='bx bx-plus-circle' style="margin-right: 0.75rem; font-size: 1.25rem;"></i>
+                        {{ _('post_new_job') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="dashboard-grid">
+            <div class="stat-card-modern">
+                <div class="stat-icon-wrapper" style="background: rgba(249, 115, 22, 0.1); color: var(--primary-color);"><i class='bx bxs-briefcase-alt'></i></div>
+                <div class="stat-info">
+                    <div class="stat-value">{{ employer.total_jobs_posted }}</div>
+                    <div class="stat-label">{{ _('jobs_posted') }}</div>
+                </div>
+            </div>
+            
+            <div class="stat-card-modern">
+                <div class="stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.1); color: var(--secondary-color);"><i class='bx bx-check-circle'></i></div>
+                <div class="stat-info">
+                    <div class="stat-value">{{ employer.positions_filled }}</div>
+                    <div class="stat-label">{{ _('positions_filled') }}</div>
+                </div>
+            </div>
+            
+            <div class="stat-card-modern">
+                <div class="stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.1); color: var(--warning-color);"><i class='bx bxs-file-doc'></i></div>
+                <div class="stat-info">
+                    <div class="stat-value">
+                        {% set total_applications = 0 %}
+                        {% for job in employer.jobs %}
+                            {% if job.status == 'open' %}
+                                {% set total_applications = total_applications + job.applications|length %}
+                            {% endif %}
+                        {% endfor %}
+                        {{ total_applications }}
+                    </div>
+                    <div class="stat-label">{{ _('active_applications') }}</div>
+                </div>
+            </div>
+            
+            <div class="stat-card-modern">
+                <div class="stat-icon-wrapper" style="background: rgba(239, 68, 68, 0.1); color: var(--danger-color);"><i class='bx bxs-star'></i></div>
+                <div class="stat-info">
+                    <div class="stat-value">{% if employer.average_rating %}{{ "%.1f"|format(employer.average_rating) }}{% else %}0.0{% endif %}</div>
+                    <div class="stat-label">{{ _('average_rating') }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Featured Workers Grid -->
+        <div style="margin-top: 3rem; margin-bottom: 3rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <div>
+                    <h2 style="font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em;">{{ _('recommended_workers') }}</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.875rem;">{{ _('talented_professionals') }}</p>
+                </div>
+                <a href="{{ url_for('employer_find_workers') }}" class="btn btn-outline">{{ _('explore_all_workers') }}</a>
+            </div>
+            
+            <div class="workers-grid">
+                {% for worker_data in workers_with_contact_status %}
+                {% set worker = worker_data.worker %}
+                <div class="card worker-card">
+                    <!-- Avatar Section -->
+                    <div class="worker-avatar {% if worker.profile_picture %}has-profile-picture{% else %}default-avatar{% endif %}">
+                        {% if worker.profile_picture %}
+                            <img src="{{ url_for('static', filename='uploads/' + worker.profile_picture) }}" alt="{{ worker.user.full_name }}">
+                        {% else %}
+                            {{ worker.user.full_name[0].upper() }}
+                        {% endif %}
+                    </div>
+
+                    <!-- Name & Status -->
+                    <div style="margin-bottom: 0.75rem;">
+                        <h4 class="worker-name">{{ worker.user.full_name }}</h4>
+                        <div class="worker-status-row">
+                            <span class="badge badge-{{ 'success' if worker.availability_status == 'available' else 'warning' if worker.availability_status == 'busy' else 'secondary' }}">
+                                {{ worker.availability_status|title }}
+                            </span>
+                            <div class="worker-rating">
+                                <i class='bx bxs-star'></i>
+                                <span>{% if worker.average_rating %}{{ "%.1f"|format(worker.average_rating) }}{% else %}5.0{% endif %} ({{ worker.received_reviews|length }} reviews)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Info Row -->
+                    <div class="worker-info-row">
+                        <span class="worker-info-item">
+                            <i class='bx bxs-map' style="color: var(--danger-color);"></i> {{ worker.district or 'Kigali' }}
+                        </span>
+                        <span class="worker-info-item">
+                            <i class='bx bxs-briefcase' style="color: var(--primary-color);"></i> {{ worker.experience_years or 0 }} yr experience
+                        </span>
+                    </div>
+
+                    <!-- Skills Section -->
+                    <div style="margin-bottom: 1rem;">
+                        <div style="font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">Skills</div>
+                        <div class="worker-skills">
+                            {% if worker.skills %}
+                                {% for skill in worker.skills.split(',')[:3] %}
+                                    <span class="skill-tag">{{ skill.strip() }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Statistics Section -->
+                    <div style="margin-bottom: 1rem; padding: 0.75rem; background: #f8fafc; border-radius: 0.5rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.8rem;">
+                            <div style="text-align: center;">
+                                <div style="font-weight: 700; color: var(--text-primary);">{{ worker.received_reviews|length }}</div>
+                                <div style="color: var(--text-secondary);">Jobs Completed</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-weight: 700; color: var(--text-primary);">{% if worker.average_rating %}{{ "%.1f"|format(worker.average_rating) }}{% else %}5.0{% endif %}</div>
+                                <div style="color: var(--text-secondary);">Rating</div>
+                            </div>
+                        </div>
+                        {% if worker.is_verified %}
+                        <div style="text-align: center; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e2e8f0;">
+                            <span style="background: #ecfdf5; color: #065f46; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">
+                                ✓ Trusted Worker Verified
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="worker-actions">
+                        <button class="btn btn-outline btn-sm" onclick="viewWorkerProfile({{ worker.id }})" style="flex: 1;">
+                            <i class='bx bx-user' style="margin-right: 0.25rem;"></i> View Profile
+                        </button>
+                        
+                        {% if worker_data.has_access %}
+                            <button onclick="openWhatsApp('{{ worker_data.phone }}')" class="btn btn-sm" style="flex: 1;" title="Contact">
+                                <i class='bx bxs-phone' style="margin-right: 0.25rem;"></i> Contact
+                            </button>
+                        {% else %}
+                            <button onclick="window.location.href='/payment_form_mobile'" class="btn btn-primary btn-sm" style="flex: 1;">
+                                <i class='bx bxs-lock-open' style="margin-right: 0.25rem;"></i> Unlock Contact
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Secondary Content Grid -->
+        <div class="grid grid-3">
+            <!-- Recent Job Posts -->
+            <div class="card" style="grid-column: span 2;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3>{{ _('recent_job_posts') }}</h3>
+                    <a href="{{ url_for('employer_my_jobs') }}" class="btn btn-outline btn-sm">{{ _('view_all_jobs') }}</a>
+                </div>
+                
+                {% if employer.jobs %}
+                    {% for job in employer.jobs[:5] %}
+                    <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div>
+                                <h4 style="margin-bottom: 0.25rem;">{{ job.title }}</h4>
+                                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">
+                                    {{ job.district }} • {{ job.job_type|title }}
+                                </p>
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    <span class="badge badge-{{ 'success' if job.status == 'filled' else 'warning' if job.status == 'open' else 'danger' }}">
+                                        {{ job.status|title }}
+                                    </span>
+                                    {% if job.is_urgent %}
+                                    <span class="badge badge-danger">Urgent</span>
+                                    {% endif %}
+                                    <span style="font-size: 0.75rem; color: var(--text-secondary);">
+                                        Posted {{ job.created_at.strftime('%d %b %Y') }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; color: var(--primary-color);">
+                                    {% if job.salary_amount %}
+                                        {{ job.salary_amount }} RWF/{{ job.salary_type }}
+                                    {% else %}
+                                        Negotiable
+                                    {% endif %}
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                    {{ job.applications|length }} applications
+                                </div>
+                                <div style="display: flex; gap: 0.25rem;">
+                                    <a href="{{ url_for('employer_my_jobs') }}" class="btn btn-sm btn-outline">View</a>
+                                    {% if job.status == 'open' %}
+                                    <a href="{{ url_for('employer_edit_job', job_id=job.id) }}" class="btn btn-sm btn-outline">Edit</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;"><i class='bx bx-edit-alt'></i></div>
+                        <p>{{ _('no_jobs_posted') }}</p>
+                        <a href="{{ url_for('employer_post_job') }}" class="btn btn-primary" style="margin-top: 1rem;">{{ _('post_first_job') }}</a>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card">
+                <h3 style="margin-bottom: 1rem;">{{ _('recent_activity') }}</h3>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;"><i class='bx bx-list-check'></i></div>
+                        <p style="font-size: 0.875rem;">{{ _('no_recent_activity') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+
+<script>
+
+function postNewJob() {
+    window.location.href = '{{ url_for("employer_post_job") }}';
+}
+
+
+
+// Floating Payment Banner - 10 second show/hide functionality
+let bannerInterval;
+let bannerTimeout;
+
+function showPaymentBanner() {
+    const banner = document.getElementById('paymentReminderBanner');
+    if (banner) {
+        banner.style.display = 'block';
+        setTimeout(() => {
+            banner.style.animation = 'slideInPulse 3s ease-in-out infinite';
+        }, 10);
+        
+        // Auto-hide after 5 seconds
+        bannerTimeout = setTimeout(() => {
+            hidePaymentBanner();
+        }, 5000);
+    }
+}
+
+function hidePaymentBanner() {
+    const banner = document.getElementById('paymentReminderBanner');
+    if (banner) {
+        banner.style.animation = 'slideOut 0.5s ease-out forwards';
+        setTimeout(() => {
+            banner.style.display = 'none';
+        }, 500);
+        
+        // Clear any pending timeout
+        if (bannerTimeout) {
+            clearTimeout(bannerTimeout);
+        }
+    }
+}
+
+function dismissPaymentBanner() {
+    hidePaymentBanner();
+}
+
+// Start the banner cycle - show every 1 minute
+function startBannerCycle() {
+    // Show first banner after 2 seconds
+    setTimeout(() => {
+        showPaymentBanner();
+        
+        // Then show every 1 minute (60,000 milliseconds)
+        bannerInterval = setInterval(() => {
+            showPaymentBanner();
+        }, 60000);
+    }, 2000);
+}
+
+// Initialize banner cycle when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    startBannerCycle();
+});
+
+// Stop banner cycle when user leaves the page
+window.addEventListener('beforeunload', function() {
+    if (bannerInterval) {
+        clearInterval(bannerInterval);
+    }
+    if (bannerTimeout) {
+        clearTimeout(bannerTimeout);
+    }
+});
+
+// Add hover effects for banner
+document.addEventListener('DOMContentLoaded', function() {
+    const banner = document.getElementById('paymentReminderBanner');
+    if (banner) {
+        banner.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.05)';
+            this.style.boxShadow = '0 15px 40px rgba(0,0,0,0.4)';
+        });
+        
+        banner.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+            this.style.boxShadow = '0 10px 30px rgba(0,0,0,0.3)';
+        });
+    }
+});
+
+</script>
+
+<!-- Worker Profile Modal -->
+<script>
+window.workersDataPayload = [
+    {% for worker_data in workers_with_contact_status %}
+    {
+        "id": {{ worker_data.worker.id | tojson | safe }},
+        "name": {{ worker_data.worker.user.full_name | tojson | safe }},
+        "phone": {{ worker_data.phone | tojson | safe }},
+        "hasAccess": {{ worker_data.has_access | tojson | safe }},
+        "profile_picture": {{ (worker_data.worker.profile_picture or '') | tojson | safe }},
+        "id_photo": {{ (worker_data.worker.id_photo or '') | tojson | safe }},
+        "national_id_number": {{ (worker_data.worker.national_id_number or '') | tojson | safe }},
+        "bio": {{ (worker_data.worker.bio or 'No bio available.') | tojson | safe }},
+        "skills": {{ (worker_data.worker.skills or '') | tojson | safe }},
+        "experience_years": {{ worker_data.worker.experience_years or 0 }},
+        "experience_details": {{ (worker_data.worker.experience_details or '') | tojson | safe }},
+        "hourly_rate": {{ worker_data.worker.hourly_rate or 'null' | tojson | safe }},
+        "district": {{ (worker_data.worker.district or '') | tojson | safe }},
+        "province": {{ (worker_data.worker.province or '') | tojson | safe }},
+        "worker_phone": {{ worker_data.worker.user.phone | tojson | safe }},
+        "is_verified": {{ worker_data.worker.is_verified | tojson | safe }},
+        "availability_status": {{ (worker_data.worker.availability_status or 'available') | tojson | safe }},
+        "reviews": [
+            {% for review in worker_data.worker.received_reviews %}
+            {
+                "rating": {{ review.rating | tojson | safe }},
+                "comment": {{ review.comment | tojson | safe }}
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ]
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event listeners to contact buttons
+    const contactButtons = document.querySelectorAll('.contact-worker-btn');
+    contactButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const workerId = this.getAttribute('data-worker-id');
+            const workerName = this.getAttribute('data-worker-name');
+            showContactOptions(workerId, workerName);
+        });
+    });
+});
+
+function showContactOptions(workerId, workerName) {
+    // Check if employer has access to contact info
+    fetch(`/employer/worker-contact/${workerId}`, {
+        method: 'GET',
+```
+
+<style>
+
+/* Floating Payment Banner Animations */
+@keyframes slideInPulse {
+    0% {
+        transform: translateX(100%) scale(0.8);
+        opacity: 0;
+    }
+    10% {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+    90% {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+    95% {
+        transform: translateX(0) scale(1.02);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes slideOut {
+    0% {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(100%) scale(0.8);
+        opacity: 0;
+    }
+}
+
+/* Floating banner responsive adjustments */
+@media (max-width: 768px) {
+    .floating-payment-banner {
+        position: fixed !important;
+        top: 10px !important;
+        right: 10px !important;
+        left: 10px !important;
+        max-width: none !important;
+        z-index: 1000 !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .floating-payment-banner {
+        top: 5px !important;
+        right: 5px !important;
+        left: 5px !important;
+        padding: 0.75rem 1rem !important;
+    }
+    
+    .floating-payment-banner h4 {
+        font-size: 0.9rem !important;
+    }
+    
+    .floating-payment-banner p {
+        font-size: 0.8rem !important;
+    }
+}
+
+/* Modern Dashboard Grid Styles */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card-modern {
+    background: var(--white);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.stat-card-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Responsive breakpoints for dashboard grid */
+@media (max-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .stat-card-modern {
+        padding: 1.25rem;
+    }
+    
+    .stat-value {
+        font-size: 1.75rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .stat-card-modern {
+        padding: 1rem;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+    
+    .stat-card-modern {
+        padding: 0.875rem;
+    }
+    
+    .stat-value {
+        font-size: 1.25rem;
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+    }
+}
+
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event listeners to contact buttons
+    const contactButtons = document.querySelectorAll('.contact-worker-btn');
+    contactButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const workerId = this.getAttribute('data-worker-id');
+            const workerName = this.getAttribute('data-worker-name');
+            showContactOptions(workerId, workerName);
+        });
+    });
+});
+
+function showContactOptions(workerId, workerName) {
+    // Check if employer has access to contact info
+    fetch(`/employer/worker-contact/${workerId}`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.has_access) {
+            // Show contact options if access is available
+            showContactModal(workerName, data.phone, data.email, data.user_id);
+        } else {
+            // Show unavailable message if no access
+            alert('Contact feature is currently unavailable.');
+        }
+    })
+    .catch(error => {
+        console.error('Error checking contact access:', error);
+        alert('Unable to check contact access. Please try again.');
+    });
+}
+
+function viewWorkerProfile(workerId) {
+    const workers = window.workersDataPayload || [];
+    const worker = workers.find(function(w) { return w.id === workerId; });
+    if (!worker) return;
+    
+    const profileContent = document.getElementById('workerProfileContent');
+    
+    // Build profile HTML using string concatenation to avoid template literal issues
+    let html = '';
+    
+    // Profile Header
+    html += '<div style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem; color: white;">';
+    html += '<div style="display: flex; align-items: center; gap: 2rem;">';
+    const avatarClass = worker.profile_picture ? 'has-profile-picture' : 'default-avatar';
+    html += '<div class="worker-avatar ' + avatarClass + '" style="width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: bold; flex-shrink: 0; overflow: hidden; background: white; color: #6366f1; border: 4px solid rgba(255,255,255,0.3);">';
+    if (worker.profile_picture) {
+        html += '<img src="/static/uploads/' + worker.profile_picture + '" style="width: 100%; height: 100%; object-fit: cover;" alt="' + worker.name + '">';
+    } else {
+        html += worker.name.charAt(0).toUpperCase();
+    }
+    html += '</div>';
+    html += '<div style="flex: 1;">';
+    html += '<div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">';
+    html += '<h2 style="margin: 0; font-size: 2rem; font-weight: 800;">' + worker.name + '</h2>';
+    if (worker.is_verified) {
+        html += '<span style="background: rgba(16, 185, 129, 0.2); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; font-weight: 600;">✓ Verified</span>';
+    }
+    html += '</div>';
+    html += '<div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1rem; opacity: 0.9;">';
+    html += '<span style="display: flex; align-items: center; gap: 0.5rem;"><i class="bx bxs-map"></i> ' + (worker.district || 'Location not specified') + '</span>';
+    html += '<span style="display: flex; align-items: center; gap: 0.5rem;"><i class="bx bxs-briefcase"></i> ' + worker.experience_years + ' years experience</span>';
+    const avgRating = worker.reviews.length > 0 ? (worker.reviews.reduce(function(acc, r) { return acc + r.rating; }, 0) / worker.reviews.length).toFixed(1) : '5.0';
+    html += '<span style="display: flex; align-items: center; gap: 0.5rem;"><i class="bx bxs-star"></i> ' + avgRating + ' (' + worker.reviews.length + ' reviews)</span>';
+    html += '</div>';
+    const statusClass = worker.availability_status === 'available' ? 'success' : worker.availability_status === 'busy' ? 'warning' : 'secondary';
+    const statusText = worker.availability_status.charAt(0).toUpperCase() + worker.availability_status.slice(1);
+    html += '<span class="badge badge-' + statusClass + '" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">' + statusText + '</span>';
+    html += '</div></div></div>';
+    
+    // Contact Information
+    html += '<div style="margin-bottom: 2rem;">';
+    html += '<h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Contact Information</h4>';
+    html += '<div style="background: #f8fafc; border-radius: 1rem; padding: 1.5rem; border: 1px solid #e2e8f0;">';
+    html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">';
+    
+    // Phone
+    html += '<div><div style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: white; border-radius: 0.75rem; border: 1px solid #e2e8f0;">';
+    html += '<div style="width: 40px; height: 40px; background: #6366f1; color: white; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;"><i class="bx bxs-phone"></i></div>';
+    html += '<div><div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Phone Number</div>';
+    html += '<div style="font-weight: 700; color: #1e293b;">' + (worker.hasAccess ? worker.phone : '🔒 Hidden (Payment Required)') + '</div></div></div></div>';
+    
+    // Email
+    html += '<div><div style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: white; border-radius: 0.75rem; border: 1px solid #e2e8f0;">';
+    html += '<div style="width: 40px; height: 40px; background: #10b981; color: white; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;"><i class="bx bxs-envelope"></i></div>';
+    html += '<div><div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Email Address</div>';
+    html += '<div style="font-weight: 700; color: #1e293b;">' + (worker.hasAccess ? (worker.email || 'Not provided') : '🔒 Hidden (Payment Required)') + '</div></div></div></div>';
+    
+    html += '</div>';
+    
+    // Hourly Rate
+    if (worker.hourly_rate) {
+        html += '<div style="margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-radius: 0.75rem; color: white; text-align: center;">';
+        html += '<div style="font-size: 0.875rem; opacity: 0.9;">Expected Hourly Rate</div>';
+        html += '<div style="font-size: 1.5rem; font-weight: 800;">💰 ' + worker.hourly_rate + ' RWF/hour</div>';
+        html += '</div>';
+    }
+    
+    html += '</div></div>';
+    
+    // National ID Section - Prominently displayed
+    html += '<div style="margin-bottom: 2rem;">';
+    html += '<h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Identification</h4>';
+    html += '<div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 1rem; padding: 1.5rem; border: 2px solid #f59e0b; position: relative; overflow: hidden;">';
+    html += '<div style="position: absolute; top: -10px; right: -10px; width: 60px; height: 60px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="bx bx-id-card" style="font-size: 24px; color: white;"></i></div>';
+    html += '<div style="display: flex; align-items: center; gap: 1rem;">';
+    html += '<div style="width: 50px; height: 50px; background: rgba(255,255,255,0.2); border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">';
+    html += '<i class="bx bx-fingerprint" style="font-size: 28px; color: white;"></i>';
+    html += '</div>';
+    html += '<div style="flex: 1;">';
+    html += '<div style="font-size: 0.875rem; color: rgba(255,255,255,0.9); font-weight: 600; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">National ID Number</div>';
+    html += '<div style="font-size: 1.25rem; font-weight: 800; color: white; font-family: \'Courier New\', monospace; letter-spacing: 0.05em; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">';
+    if (worker.hasAccess && worker.national_id_number) {
+        html += worker.national_id_number;
+    } else if (worker.hasAccess) {
+        html += 'Not provided';
+    } else {
+        html += '🔒 Verify identity to view';
+    }
+    html += '</div>';
+    if (worker.national_id_number && worker.hasAccess) {
+        html += '<div style="margin-top: 0.5rem; padding: 0.25rem 0.75rem; background: rgba(16, 185, 129, 0.2); border-radius: 0.5rem; display: inline-block;">';
+        html += '<span style="color: #d1fae5; font-size: 0.75rem; font-weight: 600;">✓ Verified Identity</span>';
+        html += '</div>';
+    }
+    html += '</div></div></div></div>';
+    
+    // About Section
+    html += '<div style="margin-bottom: 2rem;">';
+    html += '<h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">About Professional</h4>';
+    html += '<div style="background: white; border-radius: 1rem; padding: 1.5rem; border: 1px solid #e2e8f0;">';
+    html += '<p style="line-height: 1.7; color: #475569; margin: 0;">' + (worker.bio || 'This professional has not provided a detailed bio yet, but they are ready to serve with their expertise and experience.') + '</p>';
+    html += '</div></div>';
+    
+    // Skills & Experience
+    html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">';
+    
+    if (worker.skills) {
+        html += '<div><h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Core Skills</h4>';
+        html += '<div style="background: white; border-radius: 1rem; padding: 1.5rem; border: 1px solid #e2e8f0;">';
+        html += '<div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">';
+        const skills = worker.skills.split(',');
+        for (let i = 0; i < skills.length; i++) {
+            html += '<span class="skill-tag">' + skills[i].trim() + '</span>';
+        }
+        html += '</div></div></div>';
+    }
+    
+    html += '<div><h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Experience</h4>';
+    html += '<div style="background: white; border-radius: 1rem; padding: 1.5rem; border: 1px solid #e2e8f0;">';
+    html += '<div style="text-align: center;"><div style="font-size: 2.5rem; font-weight: 800; color: #6366f1; margin-bottom: 0.5rem;">' + (worker.experience_years || 0) + '</div>';
+    html += '<div style="color: #64748b; font-weight: 600;">Years of Experience</div></div></div></div>';
+    html += '</div>';
+    
+    // Reviews Section
+    if (worker.reviews.length > 0) {
+        html += '<div style="margin-bottom: 2rem;">';
+        html += '<h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Client Reviews (' + worker.reviews.length + ')</h4>';
+        html += '<div style="background: white; border-radius: 1rem; padding: 1.5rem; border: 1px solid #e2e8f0;">';
+        html += '<div style="display: flex; flex-direction: column; gap: 1rem;">';
+        
+        const reviewsToShow = worker.reviews.slice(0, 3);
+        for (let i = 0; i < reviewsToShow.length; i++) {
+            const review = reviewsToShow[i];
+            html += '<div style="padding: 1rem; background: #f8fafc; border-radius: 0.75rem; border-left: 4px solid #6366f1;">';
+            html += '<div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">';
+            html += '<div style="color: #fbbf24;">';
+            for (let j = 0; j < 5; j++) {
+                html += j < review.rating ? '⭐' : '☆';
+            }
+            html += '</div>';
+            html += '<span style="color: #64748b; font-size: 0.875rem; font-weight: 600;">' + review.rating + '/5</span>';
+            html += '</div>';
+            html += '<p style="margin: 0; font-size: 0.9rem; color: #475569; line-height: 1.5;">' + review.comment + '</p>';
+            html += '</div>';
+        }
+        
+        html += '</div></div></div>';
+    }
+    
+    // Action Buttons
+    html += '<div style="display: flex; gap: 1rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0;">';
+    if (worker.hasAccess) {
+        html += '<button onclick="openWhatsApp(\'' + worker.phone + '\')" class="btn" style="flex: 1; background: #25D366; color: white; padding: 1rem; font-weight: 700; border: none; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><i class="bx bxl-whatsapp" style="font-size: 1.25rem;"></i> WhatsApp</button>';
+        html += '<button onclick="makeCall(\'' + worker.phone + '\')" class="btn btn-primary" style="flex: 1; padding: 1rem; font-weight: 700; border: none; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><i class="bx bxs-phone" style="font-size: 1.25rem;"></i> Call Now</button>';
+    } else {
+        const escapedName = worker.name.replace(/'/g, "\\'");
+        html += '<button onclick="window.location.href=\'/payment_form_mobile\'" class="btn btn-primary" style="flex: 1; padding: 1rem; font-weight: 700; border: none; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><i class="bx bxs-lock-open" style="font-size: 1.25rem;"></i> Unlock Contact Details</button>';
+    }
+    html += '</div>';
+    
+    profileContent.innerHTML = html;
+    document.getElementById('workerProfileModal').style.display = 'flex';
+}
+
+function closeWorkerProfile(event) {
+    if (event && event.target !== event.currentTarget) {
+        return; // Don't close if clicking inside the modal content
+    }
+    document.getElementById('workerProfileModal').style.display = 'none';
+}
+
+function openWhatsApp(phone) {
+    if (!phone) {
+        alert('Worker phone number is not available.');
+        return;
+    }
+    const cleaned = phone.replace(/[^0-9]/g, '');
+    const waNumber = cleaned.startsWith('250') ? cleaned : cleaned.replace(/^0+/, '');
+    window.open('https://wa.me/' + waNumber, '_blank');
+}
+
+function makeCall(phone) {
+    if (!phone) {
+        alert('Worker phone number is not available.');
+        return;
+    }
+    const cleaned = phone.replace(/[^0-9+]/g, '');
+    window.location.href = 'tel:' + cleaned;
+}
+
+
+function showContactModal(workerName, phone, email, workerId) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    `;
+    
+    modal.innerHTML = `
+        <div>
+            <div style="background: white; padding: 2rem; border-radius: 1rem; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                <h3 style="margin-bottom: 1rem;">Contact ${workerName}</h3>
+                <div style="margin-bottom: 1rem;">
+                    <p style="margin-bottom: 0.5rem;"><strong>Phone:</strong> ${phone}</p>
+                    <p style="margin-bottom: 1rem;"><strong>Email:</strong> ${email}</p>
+                </div>
+                
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                    <button onclick="window.open('https://wa.me/${phone.replace(/[^0-9]/g, '')}', '_blank')" 
+                            style="flex: 1; padding: 0.75rem; background: #25D366; color: white; border: none; border-radius: 0.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
+                        <i class='bx bxl-whatsapp'></i> WhatsApp
+                    </button>
+                    <button onclick="window.location.href='tel:${phone}'" 
+                            style="flex: 1; padding: 0.75rem; background: var(--primary-color); color: white; border: none; border-radius: 0.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
+                        <i class='bx bx-phone'></i> Call
+                    </button>
+                    <button onclick="window.location.href='mailto:${email}'" 
+                            style="flex: 1; padding: 0.75rem; background: var(--info-color); color: white; border: none; border-radius: 0.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
+                        <i class='bx bx-envelope'></i> Email
+                    </button>
+                </div>
+                
+                <div style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-bottom: 1rem;">
+                    <h4 style="margin-bottom: 0.75rem; color: var(--text-primary);">Add to Hired Workers</h4>
+                    <form id="hireWorkerForm" onsubmit="hireWorker(event, ${workerId})">
+                        <div style="margin-bottom: 0.75rem;">
+                            <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; font-weight: 600; color: var(--text-primary);">Job Title</label>
+                            <input type="text" name="job_title" placeholder="e.g., Housekeeper, Gardener" required
+                                   style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; font-size: 0.875rem;">
+                        </div>
+                        <div style="margin-bottom: 0.75rem;">
+                            <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; font-weight: 600; color: var(--text-primary);">Salary (FRW)</label>
+                            <input type="number" name="salary" placeholder="e.g., 50000" required
+                                   style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; font-size: 0.875rem;">
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; font-weight: 600; color: var(--text-primary);">Notes</label>
+                            <textarea name="notes" rows="2" placeholder="Add any notes about this worker..."
+                                      style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; font-size: 0.875rem; resize: vertical;"></textarea>
+                        </div>
+                        <button type="submit" style="width: 100%; padding: 0.75rem; background: var(--success-color); color: white; border: none; border-radius: 0.5rem; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                            <i class='bx bx-user-plus'></i> Add to Hired Workers
+                        </button>
+                    </form>
+                </div>
+                
+                <div style="text-align: center;">
+                    <button onclick="this.closest('div[style*=fixed]').remove()" 
+                            style="padding: 0.5rem 1rem; background: var(--text-secondary); color: white; border: none; border-radius: 0.5rem; cursor: pointer;">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
+function hireWorker(event, workerId) {
+    event.preventDefault();
+    const form = document.getElementById('hireWorkerForm');
+    const formData = new FormData(form);
+    fetch(`/employer/worker/${workerId}/hire`, {
+        method: 'POST',
+        body: formData,
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            // Close modal and refresh page to show updated hired workers
+            event.target.closest('div[style*=fixed]').remove();
+            // Optionally redirect to hired workers page
+            if (confirm('Would you like to view your hired workers list?')) {
+                window.location.href = '/employer/hired-workers';
+            }
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error hiring worker:', error);
+        alert('Unable to hire worker. Please try again.');
+    });
+}
+
+function viewWorkerProfile(workerId) {
+    console.log('Opening profile for worker ID:', workerId);
+    const workers = window.workersDataPayload || [];
+    console.log('Available workers:', workers);
+    
+    const worker = workers.find(w => w.id === workerId);
+    if (!worker) {
+        console.error('Worker not found with ID:', workerId);
+        return;
+    }
+    
+    console.log('Found worker:', worker);
+    const profileContent = document.getElementById('workerProfileContent');
+    const modal = document.getElementById('workerProfileModal');
+    
+    profileContent.innerHTML = `
+        <!-- Profile Header -->
+        <div style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem; color: white;">
+            <div style="display: flex; align-items: center; gap: 2rem;">
+                <div class="worker-avatar ${worker.profile_picture ? 'has-profile-picture' : 'default-avatar'}" style="width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: bold; flex-shrink: 0; overflow: hidden; background: white; color: #6366f1; border: 4px solid rgba(255,255,255,0.3);">
+                    ${worker.profile_picture ? 
+                        `<img src="/static/uploads/${worker.profile_picture}" style="width: 100%; height: 100%; object-fit: cover;" alt="${worker.name}">` : 
+                        worker.name.charAt(0).toUpperCase()
+                    }
+                </div>
+                <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                        <h2 style="margin: 0; font-size: 2rem; font-weight: 800;">${worker.name}</h2>
+                        ${worker.is_verified ? '<span style="background: rgba(16, 185, 129, 0.2); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; font-weight: 600;">✓ Verified</span>' : ''}
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1rem; opacity: 0.9;">
+                        <span style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class='bx bxs-map'></i> ${worker.district || 'Location not specified'}
+                        </span>
+                        <span style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class='bx bxs-briefcase'></i> ${worker.experience_years} years experience
+                        </span>
+                        <span style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class='bx bxs-star'></i> ${worker.reviews.length > 0 ? parseFloat(worker.reviews.reduce((acc, r) => acc + r.rating, 0) / worker.reviews.length).toFixed(1) : '5.0'} (${worker.reviews.length} reviews)
+                        </span>
+                    </div>
+                    <span class="badge badge-${worker.availability_status === 'available' ? 'success' : worker.availability_status === 'busy' ? 'warning' : 'secondary'}" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
+                        ${worker.availability_status.charAt(0).toUpperCase() + worker.availability_status.slice(1)}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div style="margin-bottom: 2rem;">
+            <h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Contact Information</h4>
+            <div style="background: #f8fafc; border-radius: 1rem; padding: 1.5rem; border: 1px solid #e2e8f0;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: white; border-radius: 0.75rem; border: 1px solid #e2e8f0;">
+                            <div style="width: 40px; height: 40px; background: #6366f1; color: white; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">
+                                <i class='bx bxs-phone'></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Phone Number</div>
+                                <div style="font-weight: 700; color: #1e293b;">
+                                    ${worker.hasAccess ? worker.phone : '🔒 Hidden (Payment Required)'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: white; border-radius: 0.75rem; border: 1px solid #e2e8f0;">
+                            <div style="width: 40px; height: 40px; background: #10b981; color: white; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">
+                                <i class='bx bxs-envelope'></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Email Address</div>
+                                <div style="font-weight: 700; color: #1e293b;">
+                                    ${worker.hasAccess ? (worker.email || 'Not provided') : '🔒 Hidden (Payment Required)'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ${worker.hourly_rate ? `
+                <div style="margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-radius: 0.75rem; color: white; text-align: center;">
+                    <div style="font-size: 0.875rem; opacity: 0.9;">Expected Hourly Rate</div>
+                    <div style="font-size: 1.5rem; font-weight: 800;">💰 ${worker.hourly_rate} RWF/hour</div>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+
+        <!-- About Section -->
+        <div style="margin-bottom: 2rem;">
+            <h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">About Professional</h4>
+            <div style="background: white; border-radius: 1rem; padding: 1.5rem; border: 1px solid #e2e8f0;">
+                <p style="line-height: 1.7; color: #475569; margin: 0;">${worker.bio || 'This professional has not provided a detailed bio yet, but they are ready to serve with their expertise and experience.'}</p>
+            </div>
+        </div>
+
+        <!-- Skills & Experience Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+            ${worker.skills ? `
+            <div>
+                <h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Core Skills</h4>
+                <div style="background: white; border-radius: 1rem; padding: 1.5rem; border: 1px solid #e2e8f0;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        ${worker.skills.split(',').map(skill => 
+                            `<span class="skill-tag">${skill.trim()}</span>`
+                        ).join('')}
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+            
+            <div>
+                <h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Experience</h4>
+                <div style="background: white; border-radius: 1rem; padding: 1.5rem; border: 1px solid #e2e8f0;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2.5rem; font-weight: 800; color: #6366f1; margin-bottom: 0.5rem;">${worker.experience_years || 0}</div>
+                        <div style="color: #64748b; font-weight: 600;">Years of Experience</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviews Section -->
+        ${worker.reviews.length > 0 ? `
+        <div style="margin-bottom: 2rem;">
+            <h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Client Reviews (${worker.reviews.length})</h4>
+            <div style="background: white; border-radius: 1rem; padding: 1.5rem; border: 1px solid #e2e8f0;">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    ${worker.reviews.slice(0, 3).map(review => `
+                        <div style="padding: 1rem; background: #f8fafc; border-radius: 0.75rem; border-left: 4px solid #6366f1;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <div style="color: #fbbf24;">
+                                    ${'⭐'.repeat(review.rating)}${'☆'.repeat(5-review.rating)}
+                                </div>
+                                <span style="color: #64748b; font-size: 0.875rem; font-weight: 600;">${review.rating}/5</span>
+                            </div>
+                            <p style="margin: 0; font-size: 0.9rem; color: #475569; line-height: 1.5;">${review.comment}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+        ` : ''}
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 1rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0;">
+            ${worker.hasAccess ? `
+            <button onclick="openWhatsApp('${worker.phone}')" class="btn" style="flex: 1; background: #25D366; color: white; padding: 1rem; font-weight: 700; border: none; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                <i class='bx bxl-whatsapp' style="font-size: 1.25rem;"></i> WhatsApp
+            </button>
+            <button onclick="makeCall('${worker.phone}')" class="btn btn-primary" style="flex: 1; padding: 1rem; font-weight: 700; border: none; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                <i class='bx bxs-phone' style="font-size: 1.25rem;"></i> Call Now
+            </button>
+            ` : `
+            <button onclick="window.location.href='/payment_form_mobile'" class="btn btn-primary" style="flex: 1; padding: 1rem; font-weight: 700; border: none; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                <i class='bx bxs-lock-open' style="font-size: 1.25rem;"></i> Unlock Contact Details
+            </button>
+            `}
+        </div>
+    `;
+    
+    console.log('Setting modal display to flex');
+    modal.style.display = 'flex';
+    console.log('Modal should now be visible');
+}
+
+function closeWorkerProfile(event) {
+    if (event && event.target !== event.currentTarget) {
+        return; // Don't close if clicking inside the modal content
+    }
+    document.getElementById('workerProfileModal').style.display = 'none';
+}
+
+function openWhatsApp(phone) {
+    if (!phone) {
+        alert('Worker phone number is not available.');
+        return;
+    }
+    const cleaned = phone.replace(/[^0-9]/g, '');
+    const waNumber = cleaned.startsWith('250') ? cleaned : cleaned.replace(/^0+/, '');
+    window.open('https://wa.me/' + waNumber, '_blank');
+}
+
+function makeCall(phone) {
+    if (!phone) {
+        alert('Worker phone number is not available.');
+        return;
+    }
+    const cleaned = phone.replace(/[^0-9+]/g, '');
+    window.location.href = 'tel:' + cleaned;
+}
+
+
+</script>
+
+<script>
+// Sidebar functionality
+function toggleSidebar() {
+    const sidebar = document.querySelector('.modern-sidebar') || document.getElementById('sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+}
+
+function closeSidebar() {
+    const sidebar = document.querySelector('.modern-sidebar') || document.getElementById('sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    
+    if (sidebar && overlay) {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+    }
+}
+</script>
+
+<div id="workerProfileModal" onclick="closeWorkerProfile(event)" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); align-items: center; justify-content: center; padding: 1rem; z-index: 10050; overflow-y: auto;">
+    <div style="background: white; width: 100%; max-width: 720px; border-radius: 1.5rem; overflow: hidden; position: relative; box-shadow: 0 25px 65px rgba(15, 23, 42, 0.25);">
+        <button onclick="closeWorkerProfile(event)" style="position: absolute; top: 1rem; right: 1rem; width: 40px; height: 40px; border: none; border-radius: 50%; background: rgba(15, 23, 42, 0.08); color: #111827; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; cursor: pointer;">&times;</button>
+        <div id="workerProfileContent" style="padding: 1.5rem; width: 100%; box-sizing: border-box;"></div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}My Jobs - Umukozi{% endblock %}
+
+{% block content %}
+
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    {% include 'includes/employer_sidebar.html' %}
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <div class="card welcome-card-premium" style="margin-bottom: 2.5rem; padding: 2.5rem; border: none; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); position: relative; overflow: hidden;">
+            <div class="welcome-card-bg-decoration"></div>
+            <div style="position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2rem;">
+                <div>
+                    <span class="hp-pill" style="background: rgba(249, 115, 22, 0.2); color: #fb923c; margin-bottom: 1rem; display: inline-block;">Manage Postings</span>
+                    <h1 style="margin-bottom: 0.75rem; color: white; font-size: 2.25rem;">{{ _('my_jobs_title') }}</h1>
+                    <p style="color: rgba(255, 255, 255, 0.7); margin: 0; font-size: 1.1rem; max-width: 500px;">
+                        {{ _('manage_job_postings_desc') }}
+                    </p>
+                </div>
+                <div>
+                    <button class="btn hero-btn-primary" onclick="postNewJob()" style="padding: 1rem 2rem;">
+                        <i class='bx bx-plus-circle' style="margin-right: 0.5rem;"></i> {{ _('post_new_job_cta') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Job Stats -->
+        <div class="dashboard-grid" style="margin-bottom: 2rem;">
+            <div class="stat-card-modern">
+                <div class="stat-icon-wrapper" style="background: rgba(249, 115, 22, 0.1); color: var(--primary-color);"><i class='bx bxs-briefcase'></i></div>
+                <div class="stat-info">
+                    <div class="stat-value">{{ jobs|length }}</div>
+                    <div class="stat-label">{{ _('total_jobs') }}</div>
+                </div>
+            </div>
+            <div class="stat-card-modern">
+                <div class="stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.1); color: var(--secondary-color);"><i class='bx bxs-check-circle'></i></div>
+                <div class="stat-info">
+                    <div class="stat-value">{{ jobs|selectattr('status', 'equalto', 'open')|list|length }}</div>
+                    <div class="stat-label">{{ _('active') }}</div>
+                </div>
+            </div>
+            <div class="stat-card-modern">
+                <div class="stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.1); color: var(--warning-color);"><i class='bx bxs-lock-alt'></i></div>
+                <div class="stat-info">
+                    <div class="stat-value">{{ jobs|selectattr('status', 'equalto', 'filled')|list|length }}</div>
+                    <div class="stat-label">{{ _('filled') }}</div>
+                </div>
+            </div>
+            <div class="stat-card-modern">
+                <div class="stat-icon-wrapper" style="background: rgba(239, 68, 68, 0.1); color: var(--danger-color);"><i class='bx bxs-group'></i></div>
+                <div class="stat-info">
+                    <div class="stat-value">
+                        {% set total_apps = 0 %}
+                        {% if jobs %}
+                            {% for job in jobs %}
+                                {% set total_apps = total_apps + ((job.applications|length) if job.applications else 0) %}
+                            {% endfor %}
+                        {% endif %}
+                        {{ total_apps }}
+                    </div>
+                    <div class="stat-label">Total Applicants</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Jobs List -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3>{{ _('your_job_postings') }}</h3>
+                <div style="display: flex; gap: 0.5rem;">
+                    <select class="form-control" style="width: auto;" onchange="filterJobs(this.value)">
+                        <option value="all">{{ _('all_jobs') }}</option>
+                        <option value="open">{{ _('active') }}</option>
+                        <option value="filled">{{ _('filled') }}</option>
+                        <option value="closed">{{ _('close') }}</option>
+                    </select>
+                </div>
+            </div>
+            
+            {% if jobs %}
+                {% for job in jobs %}
+                <div style="border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1rem; position: relative;">
+                    <!-- New Job Indicator -->
+                    {% if job.is_new %}
+                    <div class="new-worker-badge">NEW</div>
+                    {% endif %}
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+                                <h4 style="margin: 0;">{{ job.title }}</h4>
+                                {% if job.is_new %}
+                                <div class="new-worker-badge" style="position: relative; top: auto; right: auto; margin-left: 0.5rem;">NEW</div>
+                                {% endif %}
+                                {% if job.is_urgent %}
+                                <span class="badge badge-danger">{{ _('urgent') }}</span>
+                                {% endif %}
+                                <span class="badge badge-{{ 'success' if job.status == 'open' else ('warning' if job.status == 'filled' else 'secondary') }}">
+                                    {{ job.status|title }}
+                                </span>
+                            </div>
+                            <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">
+                                {{ job.district }}, {{ job.sector }} • {{ _('posted_on') }} {{ job.created_at.strftime('%d %b %Y') }}
+                            </p>
+                            <p style="margin-bottom: 1rem;">{{ job.description }}</p>
+                            
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.875rem; color: var(--text-secondary);">
+                                <div><strong>💰 {{ _('salary') }}:</strong> {{ job.salary_amount }} RWF/{{ job.salary_type }}</div>
+                                <div><strong>🕐 {{ _('job_type') }}:</strong> {{ job.job_type.replace('_', ' ').title() }}</div>
+                                <div><strong>📄 {{ _('applications') }}:</strong> {{ job.applications|length }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-outline btn-sm" onclick="viewJobDetails({{ job.id }})">
+                                {{ _('details') }}
+                            </button>
+                            <button class="btn btn-outline btn-sm" onclick="viewApplications({{ job.id }})"> <!-- eslint-disable-line -->
+                                {{ _('applications') }} ({{ job.applications|length }})
+                            </button>
+                            {% if job.status == 'open' %}
+                            <button class="btn btn-outline btn-sm" onclick="editJob({{ job.id }})">
+                                {{ _('edit') }}
+                            </button>
+                            <button class="btn btn-outline btn-sm" onclick="closeJob({{ job.id }})"> <!-- eslint-disable-line -->
+                                {{ _('close') }}
+                            </button>
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                            {{ _('last_updated') }} {{ job.updated_at.strftime('%d %b %Y') if job.updated_at else job.created_at.strftime('%d %b %Y') }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
+                    <h3>{{ _('no_job_postings') }}</h3>
+                    <p>{{ _('start_posting') }}</p>
+                    <button class="btn btn-primary" style="margin-top: 1rem;" onclick="postNewJob()">
+                        <span style="margin-right: 0.5rem;">➕</span> {{ _('post_first_job') }}
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+
+<style>
+</style>
+
+<script>
+function postNewJob() {
+    window.location.href = '{{ url_for("employer_post_job") }}';
+}
+
+function viewJobDetails(jobId) {
+    alert('Viewing job details for ID: ' + jobId);
+}
+
+function viewApplications(jobId) {
+    window.location.href = '{{ url_for("employer_applications") }}';
+}
+
+function editJob(jobId) {
+    window.location.href = '/employer/job/' + jobId + '/edit';
+}
+
+function closeJob(jobId) {
+    if (confirm('Are you sure you want to close this job posting? Workers will no longer be able to apply.')) {
+        fetch('/employer/job/' + jobId + '/close', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Failed to close job.');
+            }
+        });
+    }
+}
+
+function filterJobs(status) {
+    alert('Filtering jobs by status: ' + status);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,595 @@
+{% extends "base.html" %}
+
+{% block title %}Employer Settings - Umukozi{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Employer Settings Page Styles - Matching Platform Design */
+.settings-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.settings-header {
+    background: white;
+    border-radius: var(--radius);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+}
+
+.settings-header h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.settings-header p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.settings-tab {
+    background: none;
+    border: none;
+    padding: 1rem 0;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.settings-tab.active {
+    color: var(--primary-color);
+}
+
+.settings-tab:after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--primary-color);
+    transition: width 0.2s;
+}
+
+.settings-tab.active:after {
+    width: 100%;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+input.form-control, select.form-control, textarea.form-control {
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    width: 100%;
+    transition: all 0.2s;
+    font-size: 0.875rem;
+}
+
+input.form-control:focus, select.form-control:focus, textarea.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+    outline: none;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-danger {
+    background: var(--danger-color);
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-outline {
+    background: white;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-outline:hover {
+    background: var(--light-bg);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    {% include 'includes/employer_sidebar.html' %}
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <div class="card" style="margin-bottom: 2.5rem; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; border: none; border-radius: 1.5rem; padding: 2.5rem; position: relative; overflow: hidden;">
+            <div style="position: relative; z-index: 1;">
+                <h1 style="margin-bottom: 0.5rem; color: white; font-size: 2.25rem; font-weight: 800;">{{ _('employer_settings_title') }}</h1>
+                <p style="color: rgba(255, 255, 255, 0.9); margin: 0; font-size: 1.1rem; max-width: 600px;">
+                    {{ _('employer_settings_desc') }}
+                </p>
+            </div>
+            <div style="position: absolute; right: -20px; bottom: -20px; font-size: 15rem; color: rgba(255, 255, 255, 0.1); transform: rotate(-15deg);">
+                <i class='bx bx-cog'></i>
+            </div>
+        </div>
+
+        <div class="grid grid-3" style="gap: 2rem;">
+            <!-- Left Column: Core Profile & Stats -->
+            <div style="grid-column: span 1; display: flex; flex-direction: column; gap: 2rem;">
+                <!-- Profile Card -->
+                <div class="card text-center" style="padding: 2.5rem; border-radius: 1.5rem; position: relative;">
+                    <div style="position: absolute; top: 1.5rem; right: 1.5rem;">
+                        {% if employer.is_verified %}
+                            <span class="badge badge-success" title="Verified Employer"><i class='bx bxs-check-shield'></i></span>
+                        {% else %}
+                            <span class="badge badge-warning" title="Verification Pending"><i class='bx bx-time'></i></span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="profile-avatar shadow-lg" style="width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 1.5rem; background: var(--light-bg); border: 4px solid white; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; color: var(--primary-color); overflow: hidden;">
+                        {% if employer.profile_picture %}
+                            <img src="{{ url_for('static', filename='uploads/' + employer.profile_picture) }}" style="width: 100%; height: 100%; object-fit: cover;">
+                        {% else %}
+                            {{ current_user.full_name[0].upper() }}
+                        {% endif %}
+                    </div>
+                    
+                    <h2 style="margin-bottom: 0.25rem; font-weight: 700;">{{ current_user.full_name }}</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">{{ employer.household_type|title or _('employer') }} Account</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 1rem; text-align: left; background: #f8fafc; padding: 1.5rem; border-radius: 1rem;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <i class='bx bx-envelope' style="color: var(--primary-color);"></i>
+                            <span style="font-size: 0.875rem;">{{ current_user.email }}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <i class='bx bx-phone' style="color: var(--primary-color);"></i>
+                            <span style="font-size: 0.875rem;">{{ current_user.phone }}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <i class='bx bx-map' style="color: var(--primary-color);"></i>
+                            <span style="font-size: 0.875rem;">{{ employer.district or 'Kigali' }}, Rwanda</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Help Card -->
+                <div class="card" style="background: rgba(59, 130, 246, 0.05); border: 1px dashed var(--primary-color); text-align: center; padding: 1.5rem;">
+                    <div style="font-size: 2.5rem; color: var(--primary-color); margin-bottom: 0.5rem;"><i class='bx bx-help-circle'></i></div>
+                    <h4 style="margin-bottom: 0.25rem;">Need Help?</h4>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">Contact our support team for any profile issues.</p>
+                </div>
+            </div>
+
+            <!-- Right Column: Settings Form -->
+            <div style="grid-column: span 2;">
+                <div class="card" style="padding: 2.5rem; border-radius: 1.5rem;">
+                    <!-- Tabs -->
+                    <div style="display: flex; gap: 2rem; border-bottom: 1px solid var(--border-color); margin-bottom: 2rem;">
+                        <button class="settings-tab active" onclick="switchTab(event, 'basic')">{{ _('employer_profile') }}</button>
+                        <button class="settings-tab" onclick="switchTab(event, 'preferences')">My Preferences</button>
+                        <button class="settings-tab" onclick="switchTab(event, 'account')">Security</button>
+                    </div>
+
+                    <!-- Basic Settings -->
+                    <div id="basic-tab" class="tab-content active">
+                        <form id="employerProfileForm">
+                            <h3 style="margin-bottom: 1.5rem; font-size: 1.25rem;">{{ _('basic_info') }}</h3>
+                            <div class="grid grid-2" style="gap: 1.5rem; margin-bottom: 2rem;">
+                                <div class="form-group">
+                                    <label class="form-label">{{ _('employer_house_name') }}</label>
+                                    <input type="text" class="form-control" name="company_name" value="{{ employer.company_name or '' }}" placeholder="e.g., The Mugisha Household">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">{{ _('category') }}</label>
+                                    <select class="form-control" name="household_type">
+                                        <option value="family" {% if employer.household_type == 'family' %}selected{% endif %}>{{ _('household_family') }}</option>
+                                        <option value="individual" {% if employer.household_type == 'individual' %}selected{% endif %}>{{ _('individual') }}</option>
+                                        <option value="company" {% if employer.household_type == 'company' %}selected{% endif %}>{{ _('company') }}</option>
+                                        <option value="farm" {% if employer.household_type == 'farm' %}selected{% endif %}>{{ _('farm_agricultural') }}</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <h3 style="margin-bottom: 1.5rem; font-size: 1.25rem;">{{ _('description') }}</h3>
+                            <div class="form-group" style="margin-bottom: 2rem;">
+                                <label class="form-label">{{ _('about_household') }}</label>
+                                <textarea class="form-control" name="bio" rows="4" placeholder="Tell workers a bit about your environment and what you value...">{{ employer.bio or '' }}</textarea>
+                                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">This helps workers understand your expectations before applying.</p>
+                            </div>
+
+                            <h3 style="margin-bottom: 1.5rem; font-size: 1.25rem;">{{ _('location_details') }}</h3>
+                            <div class="grid grid-3" style="gap: 1rem; margin-bottom: 1.5rem;">
+                                <div class="form-group">
+                                    <label class="form-label">{{ _('province') }}</label>
+                                    <select class="form-control" name="province">
+                                        <option value="kigali" {% if employer.province == 'kigali' %}selected{% endif %}>Kigali City</option>
+                                        <option value="northern" {% if employer.province == 'northern' %}selected{% endif %}>Northern</option>
+                                        <option value="southern" {% if employer.province == 'southern' %}selected{% endif %}>Southern</option>
+                                        <option value="eastern" {% if employer.province == 'eastern' %}selected{% endif %}>Eastern</option>
+                                        <option value="western" {% if employer.province == 'western' %}selected{% endif %}>Western</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">{{ _('district') }}</label>
+                                    <input type="text" class="form-control" name="district" value="{{ employer.district or '' }}" placeholder="e.g., Gasabo">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">{{ _('sector') }}</label>
+                                    <input type="text" class="form-control" name="sector" value="{{ employer.sector or '' }}" placeholder="e.g., Kimironko">
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 2rem;">
+                                <label class="form-label">{{ _('directions_landmark') }}</label>
+                                <input type="text" class="form-control" name="address_details" value="{{ employer.address_details or '' }}" placeholder="e.g., Near Kimironko Market, House #12 or opposite the primary school">
+                            </div>
+
+                            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                                <button type="reset" class="btn btn-outline">{{ _('discard_changes') }}</button>
+                                <button type="button" class="btn btn-primary" onclick="saveProfile()">{{ _('save_profile') }}</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Hiring Preferences -->
+                    <div id="preferences-tab" class="tab-content">
+                        <form id="hiringPreferencesForm">
+                            <h3 style="margin-bottom: 1.5rem; font-size: 1.25rem;">Default Job Preferences</h3>
+                            <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem;">These will be used to pre-fill your future job postings.</p>
+                            
+                            <div class="grid grid-2" style="gap: 1.5rem; margin-bottom: 2rem;">
+                                <div class="form-group">
+                                    <label class="form-label">Typical Service Needed</label>
+                                    <select class="form-control">
+                                        <option>House Cleaning</option>
+                                        <option>Cooking / Chef</option>
+                                        <option>Gardening</option>
+                                        <option>Childcare / Nanny</option>
+                                        <option>Driving</option>
+                                        <option>Security Guard</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Preferred Arrangement</label>
+                                    <select class="form-control">
+                                        <option>Full-time (Live-out)</option>
+                                        <option>Live-in (Stay at home)</option>
+                                        <option>Part-time / Weekly</option>
+                                        <option>One-time service</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <h3 style="margin-bottom: 1.5rem; font-size: 1.25rem;">Notification Preferences</h3>
+                            <div style="background: #f8fafc; padding: 1.5rem; border-radius: 1rem; margin-bottom: 2rem;">
+                                <label style="display: flex; align-items: center; margin-bottom: 1.25rem; cursor: pointer;">
+                                    <input type="checkbox" checked style="width: 1.2rem; height: 1.2rem; margin-right: 0.75rem;">
+                                    <div>
+                                        <div style="font-weight: 600; font-size: 0.95rem;">New Application Alerts</div>
+                                        <div style="font-size: 0.8rem; color: var(--text-secondary);">Receive an email immediately when a worker applies.</div>
+                                    </div>
+                                </label>
+                                <label style="display: flex; align-items: center; margin-bottom: 1.25rem; cursor: pointer;">
+                                    <input type="checkbox" checked style="width: 1.2rem; height: 1.2rem; margin-right: 0.75rem;">
+                                    <div>
+                                        <div style="font-weight: 600; font-size: 0.95rem;">Worker Recommendations</div>
+                                        <div style="font-size: 0.8rem; color: var(--text-secondary);">Weekly email of workers matching your previous job posts.</div>
+                                    </div>
+                                </label>
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" style="width: 1.2rem; height: 1.2rem; margin-right: 0.75rem;">
+                                    <div>
+                                        <div style="font-weight: 600; font-size: 0.95rem;">WhatsApp Notifications</div>
+                                        <div style="font-size: 0.8rem; color: var(--text-secondary);">Receive urgent application alerts directly on WhatsApp.</div>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                                <button type="button" class="btn btn-primary" onclick="alert('Preferences saved!')">Update Preferences</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Account & Security -->
+                    <div id="account-tab" class="tab-content">
+                        <h3 style="margin-bottom: 1.5rem; font-size: 1.25rem;">{{ _('account_security') }}</h3>
+                        <div class="card" style="background: #f8fafc; border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 1rem; margin-bottom: 2rem;">
+                            <form id="changePasswordForm">
+                                <div class="form-group" style="margin-bottom: 1.5rem;">
+                                    <label class="form-label">Current Password</label>
+                                    <input type="password" name="current_password" class="form-control" required placeholder="••••••••">
+                                </div>
+                                <div class="grid grid-2" style="gap: 1.5rem; margin-bottom: 1.5rem;">
+                                    <div class="form-group">
+                                        <label class="form-label">New Password</label>
+                                        <input type="password" id="new_password" name="new_password" class="form-control" required placeholder="••••••••">
+                                        <div class="password-strength-meter" style="margin-top: 0.5rem; height: 4px; background: #e2e8f0; border-radius: 2px; overflow: hidden;">
+                                            <div id="strength-bar" style="width: 0%; height: 100%; transition: all 0.3s ease;"></div>
+                                        </div>
+                                        <div id="strength-text" style="font-size: 0.75rem; margin-top: 0.25rem; font-weight: 600; color: var(--text-secondary);">
+                                            {{ _('password_hint') }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Confirm New Password</label>
+                                        <input type="password" id="confirm_password" name="confirm_password" class="form-control" required placeholder="••••••••">
+                                    </div>
+                                </div>
+                                <div style="display: flex; justify-content: flex-end;">
+                                    <button type="button" id="changePasswordBtn" class="btn btn-primary" onclick="updatePassword()" disabled>Update Password</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <h3 style="margin-bottom: 1.5rem; font-size: 1.25rem; color: var(--danger-color);">Danger Zone</h3>
+                        <div style="border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 1rem; padding: 1.5rem;">
+                            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Once you delete your account, there is no going back. Please be certain.</p>
+                            <div style="display: flex; gap: 1rem;">
+                                <button class="btn btn-danger" onclick="confirmDeletion()">Delete Account</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+.settings-tab {
+    background: none;
+    border: none;
+    padding: 1rem 0;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s;
+}
+
+.settings-tab.active {
+    color: var(--primary-color);
+}
+
+.settings-tab:after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--primary-color);
+    transition: width 0.3s;
+}
+
+.settings-tab.active:after {
+    width: 100%;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.4s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+input.form-control, select.form-control, textarea.form-control {
+    border-radius: 0.75rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--border-color);
+    width: 100%;
+    transition: all 0.2s;
+}
+
+input.form-control:focus, select.form-control:focus, textarea.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+</style>
+
+<script>
+function switchTab(event, tabId) {
+    // Remove active class from all tabs
+    document.querySelectorAll('.settings-tab').forEach(tab => tab.classList.remove('active'));
+    // Add active class to clicked tab
+    event.currentTarget.classList.add('active');
+    
+    // Hide all tab content
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    // Show target tab content
+    document.getElementById(tabId + '-tab').classList.add('active');
+}
+
+function saveProfile() {
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Saving...';
+    btn.disabled = true;
+    
+    // Simulate API call
+    setTimeout(() => {
+        showActionModal(
+            'Settings Updated', 
+            'Your employer profile has been successfully updated.', 
+            'success', 
+            () => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        );
+    }, 1000);
+}
+
+function confirmDeletion() {
+    const confirmation = prompt('Type "DELETE MY ACCOUNT" to confirm permanent deletion:');
+    if (confirmation === 'DELETE MY ACCOUNT') {
+        alert('Your request has been submitted for processing.');
+    }
+}
+
+function updatePassword() {
+    const form = document.getElementById('changePasswordForm');
+    const formData = new FormData(form);
+    const btn = document.getElementById('changePasswordBtn');
+    const originalText = btn.innerHTML;
+    
+    btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Updating...';
+    btn.disabled = true;
+    
+    fetch('/settings/change-password', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showActionModal('Success', data.message, 'success', () => {
+                form.reset();
+                checkNewPasswordStrength('');
+                btn.innerHTML = originalText;
+            });
+        } else {
+            showActionModal('Error', data.error, 'error', () => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showActionModal('Error', 'An unexpected error occurred.', 'error', () => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    });
+}
+
+const newPassword = document.getElementById('new_password');
+const confirmPassword = document.getElementById('confirm_password');
+const strengthBar = document.getElementById('strength-bar');
+const strengthText = document.getElementById('strength-text');
+const changePasswordBtn = document.getElementById('changePasswordBtn');
+
+function checkNewPasswordStrength(value) {
+    let score = 0;
+    if (value.length >= 8) score++;
+    if (/[A-Z]/.test(value)) score++;
+    if (/[a-z]/.test(value)) score++;
+    if (/[0-9]/.test(value)) score++;
+    if (/[^A-Za-z0-9]/.test(value)) score++;
+
+    let width = (score / 5) * 100;
+    let color = '#ef4444';
+    let label = '{{ _('strength_weak') }}';
+
+    if (score > 2) { color = '#f59e0b'; label = '{{ _('strength_medium') }}'; }
+    if (score > 3) { color = '#10b981'; label = '{{ _('strength_strong') }}'; }
+    if (score === 5) { color = '#059669'; label = '{{ _('strength_very_strong') }}'; }
+
+    strengthBar.style.width = width + '%';
+    strengthBar.style.background = color;
+    strengthText.innerText = value ? '{{ _('password_strength') }}: ' + label : '{{ _('password_hint') }}';
+    strengthText.style.color = value ? color : 'var(--text-secondary)';
+
+    return score === 5;
+}
+
+function validatePasswords() {
+    const isStrong = checkNewPasswordStrength(newPassword.value);
+    const matches = newPassword.value === confirmPassword.value;
+    
+    if (newPassword.value && confirmPassword.value && !matches) {
+        confirmPassword.setCustomValidity('{{ _('passwords_match_error') }}');
+    } else {
+        confirmPassword.setCustomValidity('');
+    }
+    
+    changePasswordBtn.disabled = !(isStrong && matches);
+}
+
+newPassword.addEventListener('input', validatePasswords);
+confirmPassword.addEventListener('input', validatePasswords);
+
+// Sidebar functionality
+function toggleSidebar() {
+    const sidebar = document.querySelector('.modern-sidebar') || document.getElementById('sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+}
+
+function closeSidebar() {
+    const sidebar = document.querySelector('.modern-sidebar') || document.getElementById('sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    
+    if (sidebar && overlay) {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+    }
+}
+
+</script>
+{% endblock %}

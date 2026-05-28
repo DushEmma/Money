@@ -1,0 +1,627 @@
+{% extends "base.html" %}
+
+{% block title %}Secure Payment - Umukozi{% endblock %}
+
+{% block content %}
+<div class="payment-mobile-container">
+    <!-- Mobile Header -->
+    <div class="payment-header">
+        <button onclick="history.back()" class="back-btn">
+            <i class='bx bx-arrow-back'></i>
+        </button>
+        <div class="header-content">
+            <h1>Secure Payment</h1>
+            <p>Complete your payment safely</p>
+        </div>
+    </div>
+
+    <!-- Compact Payment Form -->
+    <form method="POST" action="{{ url_for('payment_submit') }}" enctype="multipart/form-data" class="payment-form">
+        <!-- Payment Summary -->
+        <div class="compact-summary">
+            <div class="amount-display">
+                <span class="amount-label">Pay Amount</span>
+                <span class="amount-value">RWF 10,000</span>
+            </div>
+            <div class="service-info">
+                <span>Connection Fee</span>
+            </div>
+        </div>
+
+        <!-- Payment Instructions -->
+        <div class="payment-instructions">
+            <div class="instructions-header">
+                <i class='bx bx-info-circle'></i>
+                <span>Payment Instructions</span>
+            </div>
+            <div class="ussd-section">
+                <div class="ussd-code" onclick="copyUSSD()" title="Click to copy">
+                    <span class="code-text">*182*1*1*0795555112#</span>
+                    <i class='bx bx-copy'></i>
+                </div>
+                <div class="copy-hint">Tap to copy USSD code</div>
+            </div>
+            <div class="recipient-info">
+                <div class="recipient-details">
+                    <strong>Pay to:</strong> Emmanuel DUSHIMIRIMANA
+                </div>
+                <div class="recipient-details">
+                    <strong>Amount:</strong> RWF 10,000
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="payment-method-section">
+            <label class="method-label">
+                <input type="radio" name="payment_method" value="momo" checked required>
+                <div class="method-display">
+                    <img src="{{ url_for('static', filename='images/momo icon.png') }}" alt="MoMo" class="method-icon">
+                    <span>MoMo - MTN Rwanda</span>
+                </div>
+            </label>
+        </div>
+
+        <!-- Form Fields -->
+        <div class="form-fields">
+            <div class="form-group">
+                <input type="text" id="payer_name" name="payer_name" placeholder="Your Full Name" required>
+            </div>
+
+            <div class="form-group">
+                <input type="tel" id="phone_number" name="phone_number" placeholder="Phone Number (07xxxxxxxx)" pattern="[0-9]{10}" required>
+            </div>
+
+            <div class="form-group">
+                <div class="file-upload-compact" id="fileUpload">
+                    <input type="file" id="screenshot" name="screenshot" accept="image/*" required>
+                    <div class="upload-label">
+                        <i class='bx bx-camera'></i>
+                        <span id="uploadText">Upload Payment Receipt</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="compact-submit-btn">
+            <i class='bx bx-lock-alt'></i>
+            <span>Pay RWF 10,000</span>
+        </button>
+    </form>
+
+    </div>
+
+<style>
+/* Compact Mobile Payment Form */
+.payment-mobile-container {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    background: #f8fafc;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Header */
+.payment-header {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    color: white;
+    padding: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    padding: 0.5rem;
+    margin-right: 1rem;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.header-content h1 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.header-content p {
+    margin: 0.25rem 0 0;
+    opacity: 0.9;
+    font-size: 0.875rem;
+}
+
+/* Compact Form */
+.payment-form {
+    background: white;
+    margin: 1rem;
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+/* Compact Summary */
+.compact-summary {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: white;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.amount-display {
+    margin-bottom: 0.5rem;
+}
+
+.amount-label {
+    display: block;
+    font-size: 0.875rem;
+    opacity: 0.9;
+    margin-bottom: 0.25rem;
+}
+
+.amount-value {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.service-info {
+    font-size: 0.875rem;
+    opacity: 0.8;
+}
+
+/* Payment Instructions */
+.payment-instructions {
+    background: #f8fafc;
+    padding: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.instructions-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.instructions-header i {
+    color: #667eea;
+    font-size: 1.25rem;
+}
+
+.ussd-section {
+    margin-bottom: 1rem;
+}
+
+.ussd-code {
+    background: white;
+    border: 2px solid #f97316;
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 0.5rem;
+}
+
+.ussd-code:hover {
+    background: #fff7ed;
+    transform: translateY(-1px);
+}
+
+.code-text {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #1e293b;
+    letter-spacing: 1px;
+}
+
+.ussd-code i {
+    color: #f97316;
+    font-size: 1.25rem;
+    transition: transform 0.2s ease;
+}
+
+.ussd-code:hover i {
+    transform: scale(1.1);
+}
+
+.copy-hint {
+    text-align: center;
+    color: #64748b;
+    font-size: 0.75rem;
+    font-style: italic;
+}
+
+.recipient-info {
+    background: white;
+    border-radius: 8px;
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+}
+
+.recipient-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.recipient-details:last-child {
+    margin-bottom: 0;
+}
+
+.recipient-details strong {
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.recipient-details span:last-child {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+/* Payment Method */
+.payment-method-section {
+    padding: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.method-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.method-label:hover {
+    border-color: #f97316;
+    background: #f8fafc;
+}
+
+.method-label input:checked + .method-display {
+    color: #f97316;
+}
+
+.method-label input {
+    display: none;
+}
+
+.method-display {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.method-icon {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+.method-display span {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* Form Fields */
+.form-fields {
+    padding: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-group input[type="text"],
+.form-group input[type="tel"] {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+    background: white;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #f97316;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+/* Compact File Upload */
+.file-upload-compact {
+    position: relative;
+    border: 2px dashed #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f8fafc;
+    transition: all 0.2s ease;
+}
+
+.file-upload-compact:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.02);
+}
+
+.file-upload-compact input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.upload-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.upload-label i {
+    font-size: 1.25rem;
+    color: #f97316;
+}
+
+/* Compact Submit Button */
+.compact-submit-btn {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: white;
+    border: none;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    border-radius: 0;
+}
+
+.compact-submit-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+.compact-submit-btn:active {
+    transform: translateY(0);
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+    .payment-mobile-container {
+        max-width: 768px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+        background: #f1f5f9;
+    }
+    
+    .payment-form {
+        margin: 0;
+    }
+    
+    .payment-header {
+        border-radius: 16px 16px 0 0;
+    }
+}
+
+@media (min-width: 1024px) {
+    .payment-mobile-container {
+        max-width: 1024px;
+        padding: 3rem 2rem;
+    }
+    
+    .form-fields {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+    
+    .form-group:last-child {
+        grid-column: 1 / -1;
+    }
+}
+</style>
+
+<script>
+// Copy USSD code function
+function copyUSSD() {
+    const ussdCode = '*182*1*1*0795555112#';
+    
+    // Try to use modern clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(ussdCode).then(function() {
+            showCopyFeedback();
+        }).catch(function() {
+            // Fallback to older method
+            fallbackCopyTextToClipboard(ussdCode);
+        });
+    } else {
+        // Fallback for older browsers
+        fallbackCopyTextToClipboard(ussdCode);
+    }
+}
+
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        showCopyFeedback();
+    } catch (err) {
+        console.error('Failed to copy text: ', err);
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function showCopyFeedback() {
+    const ussdElement = document.querySelector('.ussd-code');
+    const originalHTML = ussdElement.innerHTML;
+    
+    // Show success feedback
+    ussdElement.innerHTML = `
+        <span class="code-text" style="color: #10b981;">Copied!</span>
+        <i class='bx bx-check' style="color: #10b981;"></i>
+    `;
+    
+    // Revert after 2 seconds
+    setTimeout(function() {
+        ussdElement.innerHTML = originalHTML;
+    }, 2000);
+    
+    // Provide haptic feedback on mobile
+    if (navigator.vibrate) {
+        navigator.vibrate(50);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('screenshot');
+    const fileUpload = document.getElementById('fileUpload');
+    
+    // Handle file selection
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file.');
+                return;
+            }
+            
+            // Validate file size (10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size must be less than 10MB.');
+                return;
+            }
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                uploadContent.style.display = 'none';
+                filePreview.style.display = 'block';
+                fileUpload.style.borderColor = '#10b981';
+                fileUpload.style.background = 'rgba(16, 185, 129, 0.02)';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Remove file function
+    window.removeFile = function() {
+        fileInput.value = '';
+        uploadContent.style.display = 'block';
+        filePreview.style.display = 'none';
+        fileUpload.style.borderColor = '#e5e7eb';
+        fileUpload.style.background = '#f8fafc';
+    };
+    
+    // Form validation
+    const form = document.querySelector('.payment-form');
+    form.addEventListener('submit', function(e) {
+        const phoneInput = document.getElementById('phone_number');
+        const phonePattern = /^[0-9]{10}$/;
+        
+        if (!phonePattern.test(phoneInput.value)) {
+            e.preventDefault();
+            alert('Please enter a valid 10-digit phone number.');
+            phoneInput.focus();
+            return;
+        }
+        
+        const fileInput = document.getElementById('screenshot');
+        if (!fileInput.files.length) {
+            e.preventDefault();
+            alert('Please upload a payment receipt.');
+            return;
+        }
+        
+        // Show loading state
+        const submitBtn = form.querySelector('.submit-btn');
+        const originalContent = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class=\'bx bx-loader-alt bx-spin\'></i><span>Processing...</span>';
+        submitBtn.disabled = true;
+        
+        // Re-enable after 5 seconds (fallback)
+        setTimeout(() => {
+            submitBtn.innerHTML = originalContent;
+            submitBtn.disabled = false;
+        }, 5000);
+    });
+    
+    // Payment method visual feedback
+    const paymentOptions = document.querySelectorAll('.payment-option');
+    paymentOptions.forEach(option => {
+        option.addEventListener('change', function() {
+            // Add haptic feedback on mobile
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        });
+    });
+    
+    // Touch-friendly interactions for mobile
+    if ('ontouchstart' in window) {
+        document.querySelectorAll('button, .option-card, .file-upload').forEach(element => {
+            element.addEventListener('touchstart', function() {
+                this.style.transform = 'scale(0.98)';
+            });
+            
+            element.addEventListener('touchend', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

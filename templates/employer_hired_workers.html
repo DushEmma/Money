@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+
+{% block title %}My Hired Workers - Umukozi{% endblock %}
+
+{% block content %}
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    {% include 'includes/employer_sidebar.html' %}
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                <div>
+                    <h1 style="margin-bottom: 0.5rem;">My Hired Workers</h1>
+                    <p style="color: var(--text-secondary); margin: 0;">
+                        Track and manage your hired workers throughout the employment process.
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('employer_find_workers') }}" class="btn btn-primary">
+                        <span style="margin-right: 0.5rem;">👥</span> Find More Workers
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-4" style="margin-bottom: 2rem;">
+            <div class="card text-center">
+                <div style="font-size: 2rem; font-weight: bold; color: var(--primary-color);">{{ total_workers }}</div>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">Total Workers</p>
+            </div>
+            <div class="card text-center">
+                <div style="font-size: 2rem; font-weight: bold; color: var(--warning-color);">{{ contacted_workers }}</div>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">Contacted</p>
+            </div>
+            <div class="card text-center">
+                <div style="font-size: 2rem; font-weight: bold; color: var(--info-color);">{{ interviewing_workers }}</div>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">Interviewing</p>
+            </div>
+            <div class="card text-center">
+                <div style="font-size: 2rem; font-weight: bold; color: var(--success-color);">{{ active_workers }}</div>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">Active</p>
+            </div>
+        </div>
+
+        <!-- Workers List -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0; font-size: 1.25rem;">Worker Status Overview</h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <select id="statusFilter" onchange="filterWorkers()" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.5rem;">
+                        <option value="all">All Status</option>
+                        <option value="contacted">Contacted</option>
+                        <option value="interviewing">Interviewing</option>
+                        <option value="hired">Hired</option>
+                        <option value="active">Active</option>
+                        <option value="completed">Completed</option>
+                        <option value="terminated">Terminated</option>
+                    </select>
+                </div>
+            </div>
+
+            {% if employments %}
+                <div class="table-container" style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--border-color);">
+                                <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary);">Worker</th>
+                                <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary);">Status</th>
+                                <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary);">Job Title</th>
+                                <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary);">Start Date</th>
+                                <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary);">Duration</th>
+                                <th style="padding: 1rem; text-align: center; font-weight: 600; color: var(--text-primary);">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for employment in employments %}
+                            <tr class="worker-row" data-status="{{ employment.status }}" style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 1rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <div class="worker-avatar {% if employment.worker.profile_picture %}has-profile-picture{% else %}default-avatar{% endif %}" style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: white;">
+                                            {% if employment.worker.profile_picture %}
+                                                <img src="{{ url_for('static', filename='uploads/' + employment.worker.profile_picture) }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                            {% else %}
+                                                {{ employment.worker.user.full_name[0].upper() }}
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <div style="font-weight: 600; color: var(--text-primary);">{{ employment.worker.user.full_name }}</div>
+                                            <div style="font-size: 0.875rem; color: var(--text-secondary);">{{ employment.worker.district or 'Location N/A' }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="padding: 1rem;">
+                                    {% set status_config = {
+                                        'contacted': {'color': 'var(--warning-color)', 'bg': 'rgba(245, 158, 11, 0.1)', 'icon': 'bx-phone'},
+                                        'interviewing': {'color': 'var(--info-color)', 'bg': 'rgba(59, 130, 246, 0.1)', 'icon': 'bx-user-voice'},
+                                        'hired': {'color': 'var(--primary-color)', 'bg': 'rgba(37, 99, 235, 0.1)', 'icon': 'bx-check-circle'},
+                                        'active': {'color': 'var(--success-color)', 'bg': 'rgba(16, 185, 129, 0.1)', 'icon': 'bx-run'},
+                                        'completed': {'color': 'var(--text-secondary)', 'bg': 'rgba(107, 114, 128, 0.1)', 'icon': 'bx-check-double'},
+                                        'terminated': {'color': 'var(--danger-color)', 'bg': 'rgba(239, 68, 68, 0.1)', 'icon': 'bx-x-circle'}
+                                    } %}
+                                    {% set config = status_config.get(employment.status, status_config['contacted']) %}
+                                    <span style="padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: {{ config.bg }}; color: {{ config.color }}; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                        <i class='bx {{ config.icon }}'></i>
+                                        {{ employment.status.title() }}
+                                    </span>
+                                </td>
+                                <td style="padding: 1rem; color: var(--text-primary);">
+                                    {{ employment.job_title or 'Not specified' }}
+                                </td>
+                                <td style="padding: 1rem; color: var(--text-secondary);">
+                                    {% if employment.start_date %}
+                                        {{ employment.start_date.strftime('%b %d, %Y') }}
+                                    {% else %}
+                                        Not set
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 1rem; color: var(--text-secondary);">
+                                    {% if employment.duration_days > 0 %}
+                                        {{ employment.duration_days }} days
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 1rem;">
+                                    <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                                        <button onclick="viewWorkerDetails({{ employment.id }})" style="padding: 0.5rem 0.75rem; background: var(--primary-color); color: white; border: none; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer; font-weight: 600;">
+                                            <i class='bx bx-eye'></i> View
+                                        </button>
+                                        <button onclick="updateWorkerStatus({{ employment.id }})" style="padding: 0.5rem 0.75rem; background: var(--info-color); color: white; border: none; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer; font-weight: 600;">
+                                            <i class='bx bx-edit'></i> Update
+                                        </button>
+                                        <a href="{{ url_for('worker_profile', worker_id=employment.worker.id) }}" style="padding: 0.5rem 0.75rem; background: var(--outline-color); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 0.375rem; font-size: 0.75rem; text-decoration: none; display: inline-block; font-weight: 600;">
+                                            <i class='bx bx-user'></i> Profile
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                    <i class='bx bx-user-x' style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
+                    <h3 style="margin-bottom: 0.5rem; color: var(--text-primary);">No Workers Yet</h3>
+                    <p style="margin-bottom: 1.5rem;">You haven't hired any workers yet. Start by finding workers that match your needs.</p>
+                    <a href="{{ url_for('employer_find_workers') }}" class="btn btn-primary">
+                        <i class='bx bx-search' style="margin-right: 0.5rem;"></i> Find Workers
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+
+<!-- Update Status Modal -->
+<div id="updateStatusModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 2rem; border-radius: 1rem; max-width: 500px; width: 90%;">
+        <h3 style="margin-bottom: 1rem;">Update Worker Status</h3>
+        <form id="updateStatusForm" method="POST">
+            <input type="hidden" id="employmentId" name="employment_id">
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">Status</label>
+                <select id="newStatus" name="status" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem;">
+                    <option value="contacted">Contacted</option>
+                    <option value="interviewing">Interviewing</option>
+                    <option value="hired">Hired</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="terminated">Terminated</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">Job Title</label>
+                <input type="text" id="jobTitle" name="job_title" placeholder="e.g., Housekeeper, Gardener" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem;">
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">Salary (FRW)</label>
+                <input type="number" id="salary" name="salary" placeholder="e.g., 50000" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem;">
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">Start Date</label>
+                <input type="date" id="startDate" name="start_date" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem;">
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-primary);">Notes</label>
+                <textarea id="employerNotes" name="employer_notes" rows="3" placeholder="Add any notes about this worker..." style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; resize: vertical;"></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="submit" style="flex: 1; padding: 0.75rem; background: var(--primary-color); color: white; border: none; border-radius: 0.5rem; font-weight: 600; cursor: pointer;">
+                    Update Status
+                </button>
+                <button type="button" onclick="hideUpdateStatusModal()" style="flex: 1; padding: 0.75rem; background: var(--text-secondary); color: white; border: none; border-radius: 0.5rem; font-weight: 600; cursor: pointer;">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Worker Details Modal -->
+<div id="workerDetailsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 2rem; border-radius: 1rem; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+        <div id="workerDetailsContent">
+            <!-- Content will be loaded dynamically -->
+        </div>
+        <div style="margin-top: 1.5rem; text-align: center;">
+            <button onclick="hideWorkerDetailsModal()" style="padding: 0.75rem 1.5rem; background: var(--text-secondary); color: white; border: none; border-radius: 0.5rem; font-weight: 600; cursor: pointer;">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function filterWorkers() {
+    const status = document.getElementById('statusFilter').value;
+    const rows = document.querySelectorAll('.worker-row');
+    
+    rows.forEach(row => {
+        if (status === 'all' || row.dataset.status === status) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function updateWorkerStatus(employmentId) {
+    // Load current employment data
+    fetch(`/employer/employment/${employmentId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('employmentId').value = employmentId;
+            document.getElementById('newStatus').value = data.status;
+            document.getElementById('jobTitle').value = data.job_title || '';
+            document.getElementById('salary').value = data.salary || '';
+            document.getElementById('startDate').value = data.start_date || '';
+            document.getElementById('employerNotes').value = data.employer_notes || '';
+            document.getElementById('updateStatusModal').style.display = 'flex';
+        })
+        .catch(error => {
+            console.error('Error loading employment details:', error);
+            alert('Error loading worker details. Please try again.');
+        });
+}
+
+function hideUpdateStatusModal() {
+    document.getElementById('updateStatusModal').style.display = 'none';
+    document.getElementById('updateStatusForm').reset();
+}
+
+function viewWorkerDetails(employmentId) {
+    fetch(`/employer/employment/${employmentId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            const content = `
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div class="worker-avatar ${data.worker.profile_picture ? 'has-profile-picture' : 'default-avatar'}" style="width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 1rem; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white;">
+                        ${data.worker.profile_picture ? 
+                            `<img src="/static/uploads/${data.worker.profile_picture}" style="width: 100%; height: 100%; object-fit: cover;">` : 
+                            data.worker.name[0].toUpperCase()}
+                    </div>
+                    <h3 style="margin: 0 0 0.5rem 0;">${data.worker.name}</h3>
+                    <p style="color: var(--text-secondary); margin: 0;">${data.worker.phone} • ${data.worker.email}</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="padding: 1rem; background: var(--bg-color); border-radius: 0.5rem;">
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Status</div>
+                        <div style="font-weight: 600; color: var(--text-primary);">${data.status.title()}</div>
+                    </div>
+                    <div style="padding: 1rem; background: var(--bg-color); border-radius: 0.5rem;">
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Duration</div>
+                        <div style="font-weight: 600; color: var(--text-primary);">${data.duration_days} days</div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Job Title</div>
+                    <div style="font-weight: 600; color: var(--text-primary);">${data.job_title || 'Not specified'}</div>
+                </div>
+                
+                ${data.salary ? `
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Salary</div>
+                    <div style="font-weight: 600; color: var(--text-primary);">${data.salary.toLocaleString()} FRW</div>
+                </div>
+                ` : ''}
+                
+                ${data.start_date ? `
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Start Date</div>
+                    <div style="font-weight: 600; color: var(--text-primary);">${new Date(data.start_date).toLocaleDateString()}</div>
+                </div>
+                ` : ''}
+                
+                ${data.employer_notes ? `
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Notes</div>
+                    <div style="font-weight: 600; color: var(--text-primary);">${data.employer_notes}</div>
+                </div>
+                ` : ''}
+                
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Contacted On</div>
+                    <div style="font-weight: 600; color: var(--text-primary);">${new Date(data.contacted_at).toLocaleDateString()}</div>
+                </div>
+            `;
+            
+            document.getElementById('workerDetailsContent').innerHTML = content;
+            document.getElementById('workerDetailsModal').style.display = 'flex';
+        })
+        .catch(error => {
+            console.error('Error loading worker details:', error);
+            alert('Error loading worker details. Please try again.');
+        });
+}
+
+function hideWorkerDetailsModal() {
+    document.getElementById('workerDetailsModal').style.display = 'none';
+}
+
+// Handle form submission
+document.getElementById('updateStatusForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const employmentId = formData.get('employment_id');
+    
+    fetch(`/employer/employment/${employmentId}/update`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Worker status updated successfully!');
+            hideUpdateStatusModal();
+            location.reload();
+        } else {
+            alert('Error updating status: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error updating status:', error);
+        alert('Error updating status. Please try again.');
+    });
+});
+</script>
+
+<style>
+.table-container {
+    overflow-x: auto;
+}
+
+.worker-avatar {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+}
+
+.worker-avatar.has-profile-picture {
+    background: none;
+}
+
+@media (max-width: 768px) {
+    .grid.grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .table-container {
+        font-size: 0.875rem;
+    }
+    
+    th, td {
+        padding: 0.5rem !important;
+    }
+}
+</style>
+
+{% endblock %}

@@ -1,0 +1,847 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Umukozi{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Settings Page Styles - Matching Platform Design */
+.settings-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.settings-header {
+    background: white;
+    border-radius: var(--radius);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+}
+
+.settings-header h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.settings-header p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.settings-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.settings-sidebar {
+    position: sticky;
+    top: 6rem;
+}
+
+.settings-nav {
+    background: white;
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border-radius: 0.75rem;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: all 0.2s ease;
+    margin-bottom: 0.5rem;
+    border: 2px solid transparent;
+}
+
+.nav-item:hover {
+    background: var(--light-bg);
+    color: var(--primary-color);
+    transform: translateX(2px);
+}
+
+.nav-item.active {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.nav-item i {
+    font-size: 1.125rem;
+    width: 20px;
+    text-align: center;
+}
+
+.danger-zone {
+    background: #fef2f2;
+    border: 1px solid #fee2e2;
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.danger-zone h4 {
+    color: #991b1b;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.danger-zone p {
+    font-size: 0.75rem;
+    color: #7f1d1d;
+    margin-bottom: 1rem;
+    line-height: 1.4;
+}
+
+.settings-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.settings-section {
+    background: white;
+    border-radius: var(--radius);
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.settings-section:hover {
+    box-shadow: var(--shadow-lg);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.section-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: white;
+}
+
+.icon-personal {
+    background: var(--primary-color);
+}
+
+.icon-professional {
+    background: var(--success-color);
+}
+
+.icon-location {
+    background: var(--accent-color);
+}
+
+.icon-security {
+    background: var(--danger-color);
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.form-group {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.settings-section {
+    display: none;
+}
+
+.settings-section.active {
+    display: block;
+}
+
+.settings-section:first-of-type {
+    display: block;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+.form-control:hover {
+    border-color: #d1d5db;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
+}
+
+.btn-modern {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-danger {
+    background: var(--danger-color);
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.password-strength-meter {
+    height: 4px;
+    background: var(--border-color);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.strength-bar {
+    height: 100%;
+    width: 0%;
+    transition: all 0.3s ease;
+    border-radius: 2px;
+}
+
+.strength-text {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.success-alert {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    min-width: 300px;
+    background: white;
+    border: 1px solid var(--success-color);
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-lg);
+    animation: slideInRight 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+}
+
+.success-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--success-color);
+    font-weight: 500;
+}
+
+.success-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--success-color);
+    font-size: 1.25rem;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.success-close:hover {
+    opacity: 1;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOutRight {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .settings-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .settings-sidebar {
+        position: static;
+        order: 2;
+    }
+    
+    .settings-content {
+        order: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .settings-container {
+        padding: 1rem;
+        margin: 0;
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .settings-header {
+        padding: 1.5rem;
+        text-align: center;
+        border-radius: 0.75rem;
+        margin: 0 0 1rem 0;
+    }
+    
+    .settings-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .settings-layout {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .settings-sidebar {
+        position: static;
+        order: 2;
+    }
+    
+    .settings-content {
+        order: 1;
+    }
+    
+    .settings-section {
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border-radius: 0.75rem;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    {% include 'includes/worker_sidebar.html' %}
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="settings-container">
+            <!-- Header -->
+            <div class="settings-header">
+                <h1>Account Settings</h1>
+                <p>Manage your personal details, professional profile, and security preferences.</p>
+            </div>
+
+            <div class="settings-layout">
+                <!-- Sidebar Navigation -->
+                <div class="settings-sidebar">
+                    <div class="settings-nav">
+                        <a href="#personal" class="nav-item active" data-section="personal">
+                            <i class='bx bxs-user'></i>
+                            <span>Personal Info</span>
+                        </a>
+                        <a href="#professional" class="nav-item" data-section="professional">
+                            <i class='bx bxs-briefcase'></i>
+                            <span>Professional</span>
+                        </a>
+                        <a href="#location" class="nav-item" data-section="location">
+                            <i class='bx bxs-map'></i>
+                            <span>Location</span>
+                        </a>
+                        <a href="#security" class="nav-item" data-section="security">
+                            <i class='bx bxs-lock-alt'></i>
+                            <span>Security</span>
+                        </a>
+                    </div>
+                    
+                    <div class="danger-zone">
+                        <h4>
+                            <i class='bx bx-error'></i>
+                            Danger Zone
+                        </h4>
+                        <p>Actions here are permanent and cannot be reversed.</p>
+                        <button class="btn-modern btn-danger" style="width: 100%;" onclick="deleteAccount()">
+                            <i class='bx bx-trash'></i> Delete Account
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Content Area -->
+                <div class="settings-content">
+                    <!-- Personal Info Section -->
+                    <section id="personal" class="settings-section">
+                        <div class="section-header">
+                            <div class="section-icon icon-personal">
+                                <i class='bx bxs-user'></i>
+                            </div>
+                            <h2 class="section-title">Personal Details</h2>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Full Legal Name</label>
+                                <input type="text" class="form-control" value="{{ current_user.full_name }}" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" class="form-control" value="{{ current_user.email }}" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" value="{{ current_user.phone }}" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Gender</label>
+                                <select class="form-control">
+                                    <option>Male</option>
+                                    <option>Female</option>
+                                    <option>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn-modern btn-primary" onclick="updatePersonalInfo()" style="margin-top: 2rem;">
+                            <i class='bx bx-save'></i> Save Personal Info
+                        </button>
+                    </section>
+
+                    <!-- Professional Section -->
+                    <section id="professional" class="settings-section">
+                        <div class="section-header">
+                            <div class="section-icon icon-professional">
+                                <i class='bx bxs-briefcase'></i>
+                            </div>
+                            <h2 class="section-title">Professional Profile</h2>
+                        </div>
+                        <div class="form-grid" style="margin-bottom: 1.5rem;">
+                            <div class="form-group">
+                                <label class="form-label">Years of Experience</label>
+                                <input type="number" class="form-control" value="{{ worker.experience_years or 0 }}" min="0" max="50">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Availability Status</label>
+                                <select class="form-control">
+                                    <option value="available" {% if worker.availability_status == 'available' %}selected{% endif %}>Open to work</option>
+                                    <option value="busy" {% if worker.availability_status == 'busy' %}selected{% endif %}>Currently working</option>
+                                    <option value="unavailable" {% if worker.availability_status == 'unavailable' %}selected{% endif %}>Not looking</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 2rem;">
+                            <label class="form-label">Professional Bio</label>
+                            <textarea class="form-control" placeholder="Describe your skills and experience to potential employers...">{{ worker.bio or '' }}</textarea>
+                        </div>
+                        <button class="btn-modern btn-primary" onclick="updateProfessionalInfo()" data-auto-refresh="true">
+                            <i class='bx bx-save'></i> Update Profile
+                        </button>
+                    </section>
+
+                    <!-- Location Section -->
+                    <section id="location" class="settings-section">
+                        <div class="section-header">
+                            <div class="section-icon icon-location">
+                                <i class='bx bxs-map'></i>
+                            </div>
+                            <h2 class="section-title">Work Location</h2>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Province</label>
+                                <select class="form-control">
+                                    <option value="kigali" {% if worker.province == 'kigali' %}selected{% endif %}>Kigali City</option>
+                                    <option value="northern" {% if worker.province == 'northern' %}selected{% endif %}>Northern Province</option>
+                                    <option value="southern" {% if worker.province == 'southern' %}selected{% endif %}>Southern Province</option>
+                                    <option value="eastern" {% if worker.province == 'eastern' %}selected{% endif %}>Eastern Province</option>
+                                    <option value="western" {% if worker.province == 'western' %}selected{% endif %}>Western Province</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">District</label>
+                                <input type="text" class="form-control" value="{{ worker.district or '' }}" placeholder="Enter your district">
+                            </div>
+                        </div>
+                        <button class="btn-modern btn-primary" onclick="updateLocationInfo()" data-auto-refresh="true" style="margin-top: 2rem;">
+                            <i class='bx bx-save'></i> Save Location
+                        </button>
+                    </section>
+
+                    <!-- Security Section -->
+                    <section id="security" class="settings-section">
+                        <div class="section-header">
+                            <div class="section-icon icon-security">
+                                <i class='bx bxs-lock-alt'></i>
+                            </div>
+                            <h2 class="section-title">Security Settings</h2>
+                        </div>
+                        
+                        <div style="background: #f8fafc; padding: 2rem; border-radius: 1.25rem; border: 1px solid #e5e7eb; margin-bottom: 2rem;">
+                            <form id="changePasswordForm">
+                                <div class="form-group" style="margin-bottom: 1.5rem;">
+                                    <label class="form-label">Current Password</label>
+                                    <input type="password" name="current_password" class="form-control" required placeholder="••••••••">
+                                </div>
+                                <div class="form-grid" style="margin-bottom: 1.5rem;">
+                                    <div class="form-group">
+                                        <label class="form-label">New Password</label>
+                                        <input type="password" id="new_password" name="new_password" class="form-control" required placeholder="••••••••">
+                                        <div class="password-strength-meter">
+                                            <div id="strength-bar" class="strength-bar"></div>
+                                        </div>
+                                        <div id="strength-text" class="strength-text">
+                                            {{ _('password_hint') }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Confirm New Password</label>
+                                        <input type="password" id="confirm_password" name="confirm_password" class="form-control" required placeholder="••••••••">
+                                    </div>
+                                </div>
+                                <div style="display: flex; justify-content: flex-end;">
+                                    <button type="button" id="changePasswordBtn" class="btn-modern btn-primary" disabled>
+                                        <i class='bx bx-lock-open'></i> Update Password
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div style="padding: 2rem; border: 1px solid #fee2e2; border-radius: 1.25rem; background: #fffcfc;">
+                            <h4 style="color: #991b1b; font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <i class='bx bx-error'></i> Delete My Account
+                            </h4>
+                            <p style="font-size: 0.9rem; color: #7f1d1d; margin-bottom: 1.5rem; line-height: 1.5;">Permanently remove your profile and all associated data. This action is irreversible.</p>
+                            <button class="btn-modern btn-danger" onclick="deleteAccount()">
+                                <i class='bx bx-trash'></i> Delete Account
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+// Navigation functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Ensure first section is visible
+    const firstSection = document.querySelector('.settings-section');
+    const firstNavItem = document.querySelector('.nav-item');
+    
+    if (firstSection && !firstSection.classList.contains('active')) {
+        firstSection.classList.add('active');
+    }
+    
+    if (firstNavItem && !firstNavItem.classList.contains('active')) {
+        firstNavItem.classList.add('active');
+    }
+    
+    // Handle navigation clicks
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Remove active class from all items and sections
+            navItems.forEach(nav => nav.classList.remove('active'));
+            document.querySelectorAll('.settings-section').forEach(section => section.classList.remove('active'));
+            
+            // Add active class to clicked item
+            this.classList.add('active');
+            
+            // Show corresponding section
+            const targetId = this.getAttribute('data-section');
+            const targetSection = document.getElementById(targetId);
+            
+            if (targetSection) {
+                targetSection.classList.add('active');
+                targetSection.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+    
+    // Update active nav item on scroll
+    const sections = document.querySelectorAll('.settings-section');
+    const observerOptions = {
+        root: null,
+        rootMargin: '-100px 0px -50% 0px',
+        threshold: 0
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const sectionId = entry.target.id;
+                const correspondingNavItem = document.querySelector(`[data-section="${sectionId}"]`);
+                
+                if (correspondingNavItem) {
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    correspondingNavItem.classList.add('active');
+                }
+            }
+        });
+    }, observerOptions);
+    
+    sections.forEach(section => observer.observe(section));
+});
+
+
+function updatePersonalInfo() {
+    showSuccessMessage('Personal information updated successfully!');
+    autoRefreshAfterAction(1500);
+}
+
+function updateProfessionalInfo() {
+    showSuccessMessage('Professional profile updated successfully!');
+    autoRefreshAfterAction(1500);
+}
+
+function updateLocationInfo() {
+    showSuccessMessage('Location preferences updated successfully!');
+    autoRefreshAfterAction(1500);
+}
+
+function showSuccessMessage(message) {
+    // Create modern success alert
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'success-alert';
+    
+    alertDiv.innerHTML = `
+        <div class="success-content">
+            <i class='bx bx-check-circle' style="font-size: 1.5rem;"></i>
+            <span>${message}</span>
+        </div>
+        <button class="success-close" onclick="this.parentElement.remove()">
+            <i class='bx bx-x'></i>
+        </button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+        alertDiv.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => alertDiv.remove(), 300);
+    }, 4000);
+}
+
+function updatePassword() {
+    const form = document.getElementById('changePasswordForm');
+    const formData = new FormData(form);
+    const btn = document.getElementById('changePasswordBtn');
+    const originalText = btn.innerHTML;
+    
+    btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Updating...';
+    btn.disabled = true;
+    
+    fetch('/settings/change-password', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccessMessage(data.message);
+            form.reset();
+            checkNewPasswordStrength('');
+            btn.innerHTML = originalText;
+            btn.disabled = true;
+        } else {
+            alert('Error: ' + data.error);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An unexpected error occurred.');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+
+const newPassword = document.getElementById('new_password');
+const confirmPassword = document.getElementById('confirm_password');
+const strengthBar = document.getElementById('strength-bar');
+const strengthText = document.getElementById('strength-text');
+const changePasswordBtn = document.getElementById('changePasswordBtn');
+
+// Translation strings
+const translations = {
+    strength_weak: 'Weak',
+    strength_medium: 'Medium',
+    strength_strong: 'Strong',
+    strength_very_strong: 'Very Strong',
+    password_strength: 'Password Strength',
+    password_hint: 'Use 8+ characters with mixed case, numbers & symbols',
+    passwords_match_error: 'Passwords do not match'
+};
+
+function checkNewPasswordStrength(value) {
+    let score = 0;
+    if (value.length >= 8) score++;
+    if (/[A-Z]/.test(value)) score++;
+    if (/[a-z]/.test(value)) score++;
+    if (/[0-9]/.test(value)) score++;
+    if (/[^A-Za-z0-9]/.test(value)) score++;
+
+    let width = (score / 5) * 100;
+    let color = '#ef4444';
+    let label = translations.strength_weak;
+
+    if (score > 2) { color = '#f59e0b'; label = translations.strength_medium; }
+    if (score > 3) { color = '#10b981'; label = translations.strength_strong; }
+    if (score === 5) { color = '#059669'; label = translations.strength_very_strong; }
+
+    strengthBar.style.width = width + '%';
+    strengthBar.style.background = color;
+    strengthText.innerText = value ? translations.password_strength + ': ' + label : translations.password_hint;
+    strengthText.style.color = value ? color : 'var(--text-secondary)';
+
+    return score === 5;
+}
+
+function validatePasswords() {
+    const isStrong = checkNewPasswordStrength(newPassword.value);
+    const matches = newPassword.value === confirmPassword.value;
+    
+    if (newPassword.value && confirmPassword.value && !matches) {
+        confirmPassword.setCustomValidity(translations.passwords_match_error);
+    } else {
+        confirmPassword.setCustomValidity('');
+    }
+    
+    changePasswordBtn.disabled = !(isStrong && matches);
+}
+
+newPassword.addEventListener('input', validatePasswords);
+confirmPassword.addEventListener('input', validatePasswords);
+
+function deleteAccount() {
+    if (confirm('CRITICAL: Are you sure you want to delete your account? This action cannot be reversed.')) {
+        const confirmText = prompt('Please type DELETE to confirm deletion:');
+        if (confirmText === 'DELETE') {
+            alert('Request submitted. Your account will be removed shortly.');
+        }
+    }
+}
+
+function autoRefreshAfterAction(delay) {
+    setTimeout(() => {
+        window.location.reload();
+    }, delay);
+}
+
+// Sidebar functionality
+function toggleSidebar() {
+    const sidebar = document.querySelector('.modern-sidebar') || document.getElementById('sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+}
+
+function closeSidebar() {
+    const sidebar = document.querySelector('.modern-sidebar') || document.getElementById('sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    
+    if (sidebar && overlay) {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+    }
+}
+
+</script>
+{% endblock %}

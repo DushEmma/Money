@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}My Applications - Umukozi{% endblock %}
+
+{% block content %}
+
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    {% include 'includes/worker_sidebar.html' %}
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <div class="card welcome-card-premium" style="margin-bottom: 2.5rem; padding: 2.5rem; border: none; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); position: relative; overflow: hidden;">
+            <div class="welcome-card-bg-decoration"></div>
+            <div style="position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2rem;">
+                <div>
+                    <span class="hp-pill" style="background: rgba(249, 115, 22, 0.2); color: #fb923c; margin-bottom: 1rem; display: inline-block;">My Submissions</span>
+                    <h1 style="margin-bottom: 0.75rem; color: white; font-size: 2.25rem;">{{ _('job_applications') }}</h1>
+                    <p style="color: rgba(255, 255, 255, 0.7); margin: 0; font-size: 1.1rem; max-width: 500px;">
+                        {{ _('track_manage_apps') }}
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('worker_find_jobs') }}" class="btn hero-btn-primary" style="padding: 1rem 2rem;">
+                        <i class='bx bx-search-alt' style="margin-right: 0.5rem;"></i> {{ _('browse_more_jobs') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="dashboard-grid">
+            <div class="stat-card-modern">
+                <div class="stat-icon-wrapper" style="background: rgba(249, 115, 22, 0.1); color: var(--primary-color);"><i class='bx bxs-file-doc'></i></div>
+                <div class="stat-info">
+                    <div class="stat-value">{{ (applications or [])|length }}</div>
+                    <div class="stat-label">{{ _('total_applied') }}</div>
+                </div>
+            </div>
+            <div class="stat-card-modern">
+                <div class="stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.1); color: var(--warning-color);"><i class='bx bx-time-five'></i></div>
+                <div class="stat-info">
+                    <div class="stat-value">{{ (applications|selectattr('status', 'equalto', 'pending')|list if applications else [])|length }}</div>
+                    <div class="stat-label">{{ _('pending_review') }}</div>
+                </div>
+            </div>
+            <div class="stat-card-modern">
+                <div class="stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.1); color: var(--secondary-color);"><i class='bx bxs-check-circle'></i></div>
+                <div class="stat-info">
+                    <div class="stat-value">{{ (applications|selectattr('status', 'equalto', 'accepted')|list if applications else [])|length }}</div>
+                    <div class="stat-label">{{ _('accepted') }}</div>
+                </div>
+            </div>
+            <div class="stat-card-modern" style="grid-column: span 1;">
+                <div class="stat-icon-wrapper" style="background: rgba(239, 68, 68, 0.1); color: var(--danger-color);"><i class='bx bxs-x-circle'></i></div>
+                <div class="stat-info">
+                    <div class="stat-value">{{ (applications|selectattr('status', 'equalto', 'rejected')|list if applications else [])|length }}</div>
+                    <div class="stat-label">{{ _('rejected') }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Applications List -->
+        <div class="applications-container">
+            <div class="applications-header">
+                <h3>{{ _('submission_history') }}</h3>
+                <div class="applications-sort">
+                    <span>{{ _('sort_by') }}</span>
+                    <select>
+                        <option>{{ _('recently_applied') }}</option>
+                        <option>{{ _('status_updates') }}</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="applications-grid">
+                {% if applications %}
+                    {% for application in applications %}
+                        <div class="application-card">
+                            <div class="application-card-header">
+                                <div class="application-job-info">
+                                    <div class="application-job-icon">
+                                        {% if 'house' in application.job.title|lower %}🏠{% elif 'child' in application.job.title|lower %}👶{% else %}💼{% endif %}
+                                    </div>
+                                    <div class="application-job-details">
+                                        <h4>{{ application.job.title }}</h4>
+                                        <p>{{ application.job.employer.user.full_name }} • {{ application.job.district }}</p>
+                                    </div>
+                                </div>
+                                <div class="application-status">
+                                    <span class="badge badge-{{ 'success' if application.status == 'accepted' else 'warning' if application.status == 'pending' else 'danger' if application.status == 'rejected' else 'secondary' }}">
+                                        {{ _(application.status)|upper }}
+                                    </span>
+                                    <p>{{ _('applied_on') }} {{ application.applied_at.strftime('%b d, %Y') }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="application-cover-letter">
+                                <p>"{{ application.cover_letter or _('no_cover_letter') }}"</p>
+                            </div>
+                            
+                            <div class="application-card-footer">
+                                <div class="application-details">
+                                    <div class="application-detail-item">
+                                        <span>{{ _('proposed_salary') }}</span>
+                                        <span>{{ application.job.salary_amount or 'Negotiable' }} RWF</span>
+                                    </div>
+                                    <div class="application-detail-item">
+                                        <span>{{ _('job_type') }}</span>
+                                        <span>{{ application.job.job_type.replace('_', ' ').title() }}</span>
+                                    </div>
+                                </div>
+                                <div class="application-actions">
+                                    <button class="btn btn-outline btn-sm" onclick="viewApplication('{{ application.id }}')">{{ _('details') }}</button>
+                                    {% if application.status == 'pending' %}
+                                        <button class="btn btn-outline btn-sm btn-danger" onclick="withdrawApplication('{{ application.id }}')">{{ _('withdraw') }}</button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-applications">
+                        <div class="no-applications-icon">💼</div>
+                        <h3>{{ _('no_apps_yet') }}</h3>
+                        <p>{{ _('no_apps_desc') }}</p>
+                        <a href="{{ url_for('worker_find_jobs') }}" class="btn btn-primary">{{ _('browse_jobs') }}</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+/* Remove header hiding to show navigation bar */
+
+/* Notification item styling */
+.notification-item-new {
+    background: rgba(249, 115, 22, 0.05) !important;
+}
+
+.notification-item-read {
+    background: transparent !important;
+}
+</style>
+
+<script>
+
+function toggleSidebar() {
+    const sidebar = document.querySelector('.modern-sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    if (sidebar) sidebar.classList.toggle('active');
+    if (overlay) overlay.classList.toggle('active');
+}
+
+function closeSidebar() {
+    const sidebar = document.querySelector('.modern-sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    if (sidebar) sidebar.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function toggleNotificationDropdown() {
+    const dropdown = document.getElementById('notificationDropdown');
+    const notificationMenu = dropdown.querySelector('.notification-menu');
+    
+    // Toggle notification dropdown
+    if (notificationMenu.style.display === 'none' || notificationMenu.style.display === '') {
+        notificationMenu.style.display = 'block';
+        // Close profile dropdown if open
+        const profileDropdown = document.getElementById('profileDropdown');
+        const profileMenu = profileDropdown.querySelector('.profile-menu');
+        if (profileMenu) profileMenu.style.display = 'none';
+    } else {
+        notificationMenu.style.display = 'none';
+    }
+}
+
+function toggleProfileDropdown() {
+    const dropdown = document.getElementById('profileDropdown');
+    const profileMenu = dropdown.querySelector('.profile-menu');
+    
+    // Toggle profile dropdown
+    if (profileMenu.style.display === 'none' || profileMenu.style.display === '') {
+        profileMenu.style.display = 'block';
+        // Close notification dropdown if open
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        const notificationMenu = notificationDropdown.querySelector('.notification-menu');
+        if (notificationMenu) notificationMenu.style.display = 'none';
+    } else {
+        profileMenu.style.display = 'none';
+    }
+}
+
+function markAsRead(notifId) {
+    fetch(`/notifications/read/${notifId}`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const item = document.querySelector(`[data-notif-id="${notifId}"]`);
+                if (item) {
+                    item.style.background = 'transparent';
+                }
+            }
+        });
+}
+
+function markAllAsRead() {
+    fetch('/notifications/read-all', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const badge = document.querySelector('.notification-dropdown span[style*="background: var(--danger-color)"]');
+                if (badge) badge.style.display = 'none';
+                const newNotifs = document.querySelectorAll('.notification-item');
+                newNotifs.forEach(n => {
+                    n.style.background = 'transparent';
+                });
+            }
+        });
+}
+
+function confirmLogout(event) {
+    event.preventDefault();
+    const logoutUrl = event.currentTarget.getAttribute('data-logout-url');
+    if (confirm('Are you sure you want to logout?')) {
+        window.location.href = logoutUrl;
+    }
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(event) {
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    const profileDropdown = document.getElementById('profileDropdown');
+    
+    if (!notificationDropdown.contains(event.target)) {
+        const notificationMenu = notificationDropdown.querySelector('.notification-menu');
+        if (notificationMenu) notificationMenu.style.display = 'none';
+    }
+    
+    if (!profileDropdown.contains(event.target)) {
+        const profileMenu = profileDropdown.querySelector('.profile-menu');
+        if (profileMenu) profileMenu.style.display = 'none';
+    }
+});
+
+function viewApplication(id) {
+    alert('Viewing application details for ID: ' + id);
+}
+
+function withdrawApplication(id) {
+    if (confirm('Are you sure you want to withdraw this application? This action cannot be undone.')) {
+        alert('Application withdrawn successfully.');
+    }
+}
+
+</script>
+{% endblock %}
+

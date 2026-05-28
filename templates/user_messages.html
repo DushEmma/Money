@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+
+{% block title %}Messages - Umukozi{% endblock %}
+
+{% block content %}
+
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    {% if current_user.user_type == 'employer' %}
+        {% include 'includes/employer_sidebar.html' %}
+    {% elif current_user.user_type == 'worker' %}
+        {% include 'includes/worker_sidebar.html' %}
+    {% endif %}
+    
+    <!-- Main Content -->
+    <main class="main-content" style="padding: 6rem 2rem 2rem; height: 100vh; display: flex; flex-direction: column;">
+        
+        <div class="card" style="margin-bottom: 2rem;">
+            <h1 style="margin-bottom: 0.5rem;">{{ _('messages') }}</h1>
+            <p style="color: var(--text-secondary); margin: 0;">View and manage your conversations</p>
+        </div>
+
+        <div class="messages-container" style="display: flex; flex: 1; min-height: 500px; max-height: 800px; background: var(--white); border-radius: 1rem; border: 1px solid var(--border-color); overflow: hidden;">
+            
+            <!-- Conversations List -->
+            <div style="width: 350px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column;">
+                <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color);">
+                    <input type="text" placeholder="Search conversations..." style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color);">
+                </div>
+                
+                <div style="flex: 1; overflow-y: auto;">
+                    {% if conversations %}
+                        {% for conv in conversations %}
+                        <a href="{{ url_for('messages', user_id=conv.other_user.id) }}" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-bottom: 1px solid var(--border-color); text-decoration: none; color: inherit; background: {% if active_user and active_user.id == conv.other_user.id %}var(--hover-bg){% else %}transparent{% endif %}; transition: background 0.2s;">
+                            <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary-color); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; flex-shrink: 0;">
+                                {{ conv.other_user.full_name[0].upper() }}
+                            </div>
+                            <div style="overflow: hidden; width: 100%;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <h4 style="margin: 0; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ conv.other_user.full_name }}</h4>
+                                    <span style="font-size: 0.75rem; color: var(--text-secondary);">{{ conv.latest_msg.created_at.strftime('%H:%M') if conv.latest_msg.created_at.date() == current_time.date() else conv.latest_msg.created_at.strftime('%d %b') }}</span>
+                                </div>
+                                <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: {{ '600' if not conv.latest_msg.is_read and conv.latest_msg.receiver_id == current_user.id else 'normal' }};">
+                                    {{ "You: " if conv.latest_msg.sender_id == current_user.id else "" }}{{ conv.latest_msg.content }}
+                                </p>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">
+                            <i class='bx bx-message-rounded-dots' style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                            <p>No conversations yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Chat Area -->
+            <div style="flex: 1; display: flex; flex-direction: column; background: #f9fafb;">
+                {% if active_user %}
+                <!-- Chat Header -->
+                <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color); background: var(--white); display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-color); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                        {{ active_user.full_name[0].upper() }}
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.1rem;">{{ active_user.full_name }}</h3>
+                        <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);">{{ active_user.user_type|title }}</p>
+                    </div>
+                </div>
+                
+                <!-- Chat Messages -->
+                <div style="flex: 1; overflow-y: auto; padding: 2rem;" id="chatMessages">
+                    {% for msg in active_messages %}
+                    <div style="display: flex; margin-bottom: 1rem; justify-content: {{ 'flex-end' if msg.sender_id == current_user.id else 'flex-start' }};">
+                        <div style="max-width: 70%; padding: 1rem; border-radius: 1rem; background: {{ 'var(--primary-color)' if msg.sender_id == current_user.id else 'white' }}; color: {{ 'white' if msg.sender_id == current_user.id else 'var(--text-primary)' }}; box-shadow: 0 1px 2px rgba(0,0,0,0.05); {{ 'border-bottom-right-radius: 0.25rem;' if msg.sender_id == current_user.id else 'border-bottom-left-radius: 0.25rem; border: 1px solid var(--border-color);' }}">
+                            <p style="margin: 0; word-break: break-word;">{{ msg.content }}</p>
+                            <span style="font-size: 0.65rem; padding-top: 0.25rem; display: block; text-align: right; opacity: 0.8;">{{ msg.created_at.strftime('%H:%M') }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Chat Input -->
+                <div style="padding: 1rem; background: var(--white); border-top: 1px solid var(--border-color);">
+                    <form action="{{ url_for('send_message') }}" method="POST" style="display: flex; gap: 1rem;">
+                        <input type="hidden" name="receiver_id" value="{{ active_user.id }}">
+                        <input type="text" name="content" placeholder="Type your message..." required autocomplete="off" style="flex: 1; padding: 1rem; border-radius: 2rem; border: 1px solid var(--border-color); background: #f9fafb;" autofocus>
+                        <button type="submit" class="btn btn-primary" style="border-radius: 2rem; padding: 0 1.5rem; display: flex; align-items: center; justify-content: center;">
+                            <i class='bx bx-send' style="font-size: 1.2rem;"></i>
+                        </button>
+                    </form>
+                </div>
+                
+                <script>
+                    // Scroll to bottom of chat
+                    const chatMessages = document.getElementById('chatMessages');
+                    if(chatMessages) {
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                </script>
+                {% else %}
+                <div style="display: flex; align-items: center; justify-content: center; flex: 1; flex-direction: column; color: var(--text-secondary);">
+                    <i class='bx bx-message-rounded-dots' style="font-size: 5rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <h3>Select a conversation</h3>
+                    <p>Choose a contact from the list to start messaging.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+/* Remove header hiding to show navigation bar */
+
+/* Notification item styling */
+.notification-item-new {
+    background: rgba(249, 115, 22, 0.05) !important;
+}
+
+.notification-item-read {
+    background: transparent !important;
+}
+
+.notification-badge {
+    position: absolute; 
+    top: -5px; 
+    right: -5px; 
+    background: var(--danger-color); 
+    color: white; 
+    font-size: 0.7rem; 
+    width: 20px; 
+    height: 20px; 
+    border-radius: 50%; 
+    font-weight: 700; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    border: 2px solid white;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+    .mobile-sidebar-toggle {
+        display: flex !important;
+    }
+    
+    main.main-content {
+        padding: 1rem !important;
+        height: auto !important;
+    }
+    
+    .messages-container {
+        flex-direction: column !important;
+        max-height: none !important;
+        min-height: calc(100vh - 200px) !important;
+    }
+    
+    /* Conversations list */
+    div[style*="width: 350px"] {
+        width: 100% !important;
+        border-right: none !important;
+        border-bottom: 1px solid var(--border-color) !important;
+        max-height: 200px !important;
+        overflow-y: auto !important;
+    }
+    
+    /* Chat area */
+    .messages-container > div:last-child {
+        flex: 1 !important;
+        min-height: auto !important;
+    }
+    
+    /* Chat messages area */
+    div[id="chatMessages"] {
+        max-width: 100% !important;
+    }
+    
+    /* Message bubbles */
+    div[style*="max-width: 70%"] {
+        max-width: 85% !important;
+    }
+    
+    /* Input area */
+    div[style*="padding: 1rem; background: var(--white); border-top: 1px solid"] {
+        padding: 1rem 0.5rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    main.main-content {
+        padding: 0.5rem !important;
+    }
+    
+    .card {
+        margin-bottom: 1rem !important;
+    }
+    
+    .card h1 {
+        font-size: 1.5rem !important;
+    }
+    
+    /* Conversations list on very small screens */
+    div[style*="width: 350px"] {
+        max-height: 150px !important;
+    }
+    
+    /* Chat header */
+    div[style*="padding: 1.5rem; border-bottom: 1px solid var(--border-color); background: var(--white); display: flex; align-items: center; gap: 1rem"] {
+        padding: 1rem 0.5rem !important;
+        gap: 0.5rem !important;
+    }
+    
+    /* Avatar in chat header */
+    div[style*="width: 40px; height: 40px"] {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 0.75rem !important;
+    }
+    
+    /* Chat messages */
+    div[style*="max-width: 70%"] {
+        max-width: 90% !important;
+        padding: 0.75rem !important;
+    }
+    
+    /* Input form */
+    form[style*="display: flex; gap: 1rem"] {
+        gap: 0.5rem !important;
+    }
+    
+    input[placeholder="Type your message..."] {
+        padding: 0.75rem !important;
+        font-size: 16px !important;
+    }
+}
+</style>
+
+<script>
+function toggleSidebar() {
+    const sidebar = document.querySelector('.modern-sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    if (sidebar) sidebar.classList.toggle('active');
+    if (overlay) overlay.classList.toggle('active');
+}
+
+function closeSidebar() {
+    const sidebar = document.querySelector('.modern-sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    if (sidebar) sidebar.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function toggleNotificationDropdown() {
+    const dropdown = document.getElementById('notificationDropdown');
+    const notificationMenu = dropdown.querySelector('.notification-menu');
+    
+    // Toggle notification dropdown
+    if (notificationMenu.style.display === 'none' || notificationMenu.style.display === '') {
+        notificationMenu.style.display = 'block';
+        // Close profile dropdown if open
+        const profileDropdown = document.getElementById('profileDropdown');
+        const profileMenu = profileDropdown.querySelector('.profile-menu');
+        if (profileMenu) profileMenu.style.display = 'none';
+    } else {
+        notificationMenu.style.display = 'none';
+    }
+}
+
+function toggleProfileDropdown() {
+    const dropdown = document.getElementById('profileDropdown');
+    const profileMenu = dropdown.querySelector('.profile-menu');
+    
+    // Toggle profile dropdown
+    if (profileMenu.style.display === 'none' || profileMenu.style.display === '') {
+        profileMenu.style.display = 'block';
+        // Close notification dropdown if open
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        const notificationMenu = notificationDropdown.querySelector('.notification-menu');
+        if (notificationMenu) notificationMenu.style.display = 'none';
+    } else {
+        profileMenu.style.display = 'none';
+    }
+}
+
+function markAsRead(notifId) {
+    fetch(`/notifications/read/${notifId}`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const item = document.querySelector(`[data-notif-id="${notifId}"]`);
+                if (item) {
+                    item.style.background = 'transparent';
+                }
+            }
+        });
+}
+
+function markAllAsRead() {
+    fetch('/notifications/read-all', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const badge = document.querySelector('.notification-dropdown span[style*="background: var(--danger-color)"]');
+                if (badge) badge.style.display = 'none';
+                const newNotifs = document.querySelectorAll('.notification-item');
+                newNotifs.forEach(n => {
+                    n.style.background = 'transparent';
+                });
+            }
+        });
+}
+
+function confirmLogout(event) {
+    event.preventDefault();
+    const logoutUrl = event.currentTarget.getAttribute('data-logout-url');
+    if (confirm('Are you sure you want to logout?')) {
+        window.location.href = logoutUrl;
+    }
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(event) {
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    const profileDropdown = document.getElementById('profileDropdown');
+    
+    if (!notificationDropdown.contains(event.target)) {
+        const notificationMenu = notificationDropdown.querySelector('.notification-menu');
+        if (notificationMenu) notificationMenu.style.display = 'none';
+    }
+    
+    if (!profileDropdown.contains(event.target)) {
+        const profileMenu = profileDropdown.querySelector('.profile-menu');
+        if (profileMenu) profileMenu.style.display = 'none';
+    }
+    
+    const sidebar = document.getElementById('sidebar');
+    const toggles = document.querySelectorAll('.mobile-sidebar-toggle');
+    
+    // Check if the click was on any toggle button
+    let clickedOnToggle = false;
+    toggles.forEach(toggle => {
+        if (toggle.contains(event.target)) {
+            clickedOnToggle = true;
+        }
+    });
+    
+    if (window.innerWidth <= 768 && 
+        sidebar &&
+        !sidebar.contains(event.target) && 
+        !clickedOnToggle &&
+        sidebar.classList.contains('active')) {
+        closeSidebar();
+    }
+});
+</script>
+{% endblock %}

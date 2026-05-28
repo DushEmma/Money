@@ -1,0 +1,7 @@
+#!/bin/bash
+# Push to both repositories
+echo "Pushing to origin..."
+git push origin master
+echo "Pushing to backup..."
+git push backup master
+echo "Done! Pushed to both repositories."

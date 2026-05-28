@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Worker Dashboard - Umukozi{% endblock %}
+
+{% block content %}
+
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    {% include 'includes/worker_sidebar.html' %}
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header Section -->
+        <div class="card welcome-card-premium" style="margin-bottom: 2.5rem; padding: 2.5rem; border: none; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); position: relative; overflow: hidden;">
+            <div class="welcome-card-bg-decoration"></div>
+            <div style="position: relative; z-index: 1;">
+                <span class="hp-pill" style="background: rgba(249, 115, 22, 0.2); color: #fb923c; margin-bottom: 1rem; display: inline-block;">{{ _('welcome_back') }}</span>
+                <h1 style="margin-bottom: 0.75rem; color: white; font-size: 2.25rem;">{{ _('worker_dashboard_title') }}</h1>
+                <p style="color: rgba(255, 255, 255, 0.7); margin: 0; font-size: 1.1rem; max-width: 500px;">
+                    {{ _('worker_dashboard_subtitle') }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="dashboard-grid" style="margin-bottom: 2rem;">
+            <div class="stat-card-modern">
+                <div class="stat-icon-wrapper" style="background: rgba(249, 115, 22, 0.1); color: var(--primary-color);">
+                    <i class='bx bx-file'></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">{{ total_applications }}</div>
+                    <div class="stat-label">{{ _('applications_submitted') }}</div>
+                </div>
+            </div>
+            
+            <div class="stat-card-modern">
+                <div class="stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.1); color: var(--secondary-color);">
+                    <i class='bx bx-check-circle'></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">{{ profile_completion }}%</div>
+                    <div class="stat-label">{{ _('profile_complete') }}</div>
+                </div>
+            </div>
+            
+            <div class="stat-card-modern">
+                <div class="stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.1); color: var(--warning-color);">
+                    <i class='bx bx-eye'></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">{{ profile_views }}</div>
+                    <div class="stat-label">{{ _('profile_views') }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <h3 style="margin-bottom: 1.5rem;">{{ _('quick_actions') }}</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <a href="{{ url_for('worker_find_jobs') }}" class="btn btn-outline" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <i class='bx bx-search'></i> {{ _('find_jobs') }}
+                </a>
+                <a href="{{ url_for('worker_applications') }}" class="btn btn-outline" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <i class='bx bx-file'></i> {{ _('my_applications') }}
+                </a>
+                <a href="{{ url_for('worker_complete_profile') }}" class="btn btn-outline" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <i class='bx bx-user'></i> {{ _('edit_profile') }}
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card">
+            <h3 style="margin-bottom: 1.5rem;">{{ _('recent_activity') }}</h3>
+            {% if recent_activities %}
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    {% for activity in recent_activities %}
+                    <div style="display: flex; gap: 1rem; align-items: start; padding: 1rem; border-radius: 0.75rem; background: var(--light-bg);">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(249, 115, 22, 0.1); color: var(--primary-color); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class='bx {{ activity.icon }}'></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; margin-bottom: 0.25rem;">{{ activity.title }}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.875rem;">{{ activity.description }}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.25rem;">{{ activity.time }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="color: var(--text-secondary); text-align: center; padding: 2rem;">{{ _('no_recent_activity') }}</p>
+            {% endif %}
+        </div>
+
+    </main>
+</div>
+
+<script>
+// Sidebar functionality
+function toggleSidebar() {
+    const sidebar = document.querySelector('.modern-sidebar') || document.getElementById('sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+}
+
+function closeSidebar() {
+    const sidebar = document.querySelector('.modern-sidebar') || document.getElementById('sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    
+    if (sidebar && overlay) {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+    }
+}
+</script>
+
+{% endblock %}

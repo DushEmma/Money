@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Umukozi{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-container" style="max-width: 550px;">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1 class="auth-title">{{ _('create_account_title') }}</h1>
+                <p class="auth-subtitle">{{ _('create_account_subtitle') }}</p>
+            </div>
+            
+            <!-- System Notice -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        {% if category == 'warning' and 'disabled' in message.lower() %}
+                        <div class="alert alert-warning" style="margin-bottom: 1.5rem; border-left: 4px solid #f59e0b;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <i class='bx bx-error' style="font-size: 1.25rem;"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST">
+                <!-- Account Type Selection -->
+                <div class="form-group">
+                    <label for="user_type" class="form-label">{{ _('i_want_to') }}</label>
+                    <select id="user_type" name="user_type" class="form-control" required>
+                        <option value="" disabled selected>{{ _('select_role') }}</option>
+                        <option value="worker">{{ _('role_worker') }}</option>
+                        <option value="employer">{{ _('role_employer') }}</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="full_name" class="form-label">{{ _('full_name') }}</label>
+                    <input type="text" id="full_name" name="full_name" class="form-control" required placeholder="John Doe">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email" class="form-label">{{ _('email') }}</label>
+                        <input type="email" id="email" name="email" class="form-control" required placeholder="john@example.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone" class="form-label">{{ _('phone_number') }}</label>
+                        <input type="tel" id="phone" name="phone" class="form-control" required placeholder="+250 7XX XXX XXX">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="password" class="form-label">{{ _('password') }}</label>
+                        <input type="password" id="password" name="password" class="form-control" required placeholder="••••••••">
+                        <div class="password-strength-meter" style="margin-top: 0.5rem; height: 4px; background: #e2e8f0; border-radius: 2px; overflow: hidden;">
+                            <div id="strength-bar" style="width: 0%; height: 100%; transition: all 0.3s ease;"></div>
+                        </div>
+                        <div id="strength-text" style="font-size: 0.75rem; margin-top: 0.25rem; font-weight: 600; color: var(--text-secondary);">
+                            {{ _('password_hint') }}
+                        </div>
+                        <ul id="password-requirements" style="list-style: none; padding: 0; margin: 0.5rem 0 0; font-size: 0.7rem; color: var(--text-secondary); display: none; grid-template-columns: 1fr 1fr; gap: 0.25rem;">
+                            <li id="req-length"><i class='bx bx-circle'></i> {{ _('password_min_length') }}</li>
+                            <li id="req-upper"><i class='bx bx-circle'></i> {{ _('password_uppercase') }}</li>
+                            <li id="req-lower"><i class='bx bx-circle'></i> {{ _('password_lowercase') }}</li>
+                            <li id="req-number"><i class='bx bx-circle'></i> {{ _('password_number') }}</li>
+                            <li id="req-special"><i class='bx bx-circle'></i> {{ _('password_special') }}</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirm_password" class="form-label">{{ _('confirm_password') }}</label>
+                        <input type="password" id="confirm_password" name="confirm_password" class="form-control" required placeholder="••••••••">
+                    </div>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 2rem;">
+                    <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                        <input type="checkbox" required style="width: 1.25rem; height: 1.25rem; margin-right: 0.75rem; margin-top: 0.125rem; accent-color: var(--primary-color);">
+                        <span style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">
+                            {{ _('agree_to') }} <a href="#" style="color: var(--primary-color); font-weight: 600; text-decoration: none;">{{ _('terms_of_service') }}</a> and 
+                            <a href="#" style="color: var(--primary-color); font-weight: 600; text-decoration: none;">{{ _('privacy_policy') }}</a>.
+                        </span>
+                    </label>
+                </div>
+                
+                <button type="submit" id="register-btn" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1rem; margin-bottom: 1.5rem;" disabled>
+                    {{ _('create_account') }}
+                </button>
+            </form>
+            
+            <div class="auth-footer">
+                <p>{{ _('already_have_account') }} <a href="{{ url_for('login') }}">{{ _('log_in') }}</a></p>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 2rem; color: var(--text-secondary); font-size: 0.875rem;">
+            <p>{{ _('secure_rwanda') }}</p>
+        </div>
+    </div>
+</div>
+
+<script>
+const password = document.getElementById('password');
+const confirmPassword = document.getElementById('confirm_password');
+const strengthBar = document.getElementById('strength-bar');
+const strengthText = document.getElementById('strength-text');
+const registerBtn = document.getElementById('register-btn');
+
+const requirements = {
+    length: document.getElementById('req-length'),
+    upper: document.getElementById('req-upper'),
+    lower: document.getElementById('req-lower'),
+    number: document.getElementById('req-number'),
+    special: document.getElementById('req-special')
+};
+
+function checkStrength(value) {
+    let score = 0;
+    const checks = {
+        length: value.length >= 8,
+        upper: /[A-Z]/.test(value),
+        lower: /[a-z]/.test(value),
+        number: /[0-9]/.test(value),
+        special: /[^A-Za-z0-9]/.test(value)
+    };
+
+    Object.keys(checks).forEach(key => {
+        if (checks[key]) {
+            score++;
+            requirements[key].style.color = 'var(--secondary-color)';
+            requirements[key].querySelector('i').className = 'bx bxs-check-circle';
+        } else {
+            requirements[key].style.color = 'var(--text-secondary)';
+            requirements[key].querySelector('i').className = 'bx bx-circle';
+        }
+    });
+
+    let width = (score / 5) * 100;
+    let color = '#ef4444';
+    let label = '{{ _('strength_weak') }}';
+
+    if (score > 2) { color = '#f59e0b'; label = '{{ _('strength_medium') }}'; }
+    if (score > 3) { color = '#10b981'; label = '{{ _('strength_strong') }}'; }
+    if (score === 5) { color = '#059669'; label = '{{ _('strength_very_strong') }}'; }
+
+    strengthBar.style.width = width + '%';
+    strengthBar.style.background = color;
+    strengthText.innerText = value ? '{{ _('password_strength') }}: ' + label : '{{ _('password_hint') }}';
+    strengthText.style.color = value ? color : 'var(--text-secondary)';
+
+    return score === 5;
+}
+
+// Show/hide password requirements based on focus and input
+password.addEventListener('focus', () => {
+    document.getElementById('password-requirements').style.display = 'grid';
+});
+
+password.addEventListener('blur', () => {
+    // Keep requirements visible if password has content
+    if (password.value.length === 0) {
+        document.getElementById('password-requirements').style.display = 'none';
+    }
+});
+
+password.addEventListener('input', () => {
+    const isStrong = checkStrength(password.value);
+    validateForm();
+});
+
+confirmPassword.addEventListener('input', () => {
+    if (password.value !== confirmPassword.value) {
+        confirmPassword.setCustomValidity('{{ _('passwords_match_error') }}');
+    } else {
+        confirmPassword.setCustomValidity('');
+    }
+    validateForm();
+});
+
+function validateForm() {
+    const isStrong = password.value.length >= 8 && 
+                     /[A-Z]/.test(password.value) && 
+                     /[a-z]/.test(password.value) && 
+                     /[0-9]/.test(password.value) && 
+                     /[^A-Za-z0-9]/.test(password.value);
+    
+    const passwordsMatch = password.value === confirmPassword.value;
+    const isFormValid = document.querySelector('form').checkValidity();
+    
+    registerBtn.disabled = !(isStrong && passwordsMatch && isFormValid);
+}
+
+// Initial form validation
+document.querySelector('form').addEventListener('change', validateForm);
+</script>
+{% endblock %}
+

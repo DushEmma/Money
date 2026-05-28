@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}Email Settings - Admin Dashboard - Umukozi{% endblock %}
+
+{% block content %}
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-btn" onclick="toggleSidebar()">
+    <i class='bx bx-menu'></i>
+</button>
+
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    {% include 'includes/admin_sidebar.html' %}
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header style="margin-bottom: 2rem; padding-top: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div>
+                    <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; letter-spacing: -0.02em;">Email Settings</h1>
+                    <p style="color: var(--text-secondary);">Configure email server settings for notifications and communications.</p>
+                </div>
+                <button onclick="testEmailConnection()" class="btn" style="background: var(--secondary-color); color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class='bx bx-test-tube'></i> Test Connection
+                </button>
+            </div>
+        </header>
+
+        <!-- Email Settings Form -->
+        <div class="card" style="background: var(--white); border-radius: 1rem; padding: 2rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 2rem;">
+            <form method="POST" id="emailSettingsForm">
+                <div style="display: grid; gap: 1.5rem;">
+                    <!-- SMTP Server Settings -->
+                    <div>
+                        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+                            <i class='bx bx-server' style="color: var(--primary-color);"></i> SMTP Server Settings
+                        </h3>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">SMTP Server</label>
+                                <input type="text" name="smtp_server" value="{{ email_config.smtp_server or '' }}" placeholder="smtp.gmail.com" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.875rem;">
+                            </div>
+                            
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Port</label>
+                                <input type="number" name="smtp_port" value="{{ email_config.smtp_port or 587 }}" placeholder="587" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.875rem;">
+                            </div>
+                            
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Encryption</label>
+                                <select name="smtp_encryption" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.875rem;">
+                                    <option value="tls" {% if email_config.smtp_encryption == 'tls' %}selected{% endif %}>TLS</option>
+                                    <option value="ssl" {% if email_config.smtp_encryption == 'ssl' %}selected{% endif %}>SSL</option>
+                                    <option value="none" {% if email_config.smtp_encryption == 'none' %}selected{% endif %}>None</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Authentication Settings -->
+                    <div>
+                        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+                            <i class='bx bx-lock' style="color: var(--primary-color);"></i> Authentication
+                        </h3>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Email Address</label>
+                                <input type="email" name="smtp_username" value="{{ email_config.smtp_username or '' }}" placeholder="noreply@umukozi.rw" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.875rem;">
+                            </div>
+                            
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Password</label>
+                                <input type="password" name="smtp_password" value="{{ email_config.smtp_password or '' }}" placeholder="Enter SMTP password" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.875rem;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Email Configuration -->
+                    <div>
+                        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+                            <i class='bx bx-envelope' style="color: var(--primary-color);"></i> Email Configuration
+                        </h3>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">From Name</label>
+                                <input type="text" name="from_name" value="{{ email_config.from_name or 'Umukozi' }}" placeholder="Umukozi" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.875rem;">
+                            </div>
+                            
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Reply-to Email</label>
+                                <input type="email" name="reply_to" value="{{ email_config.reply_to or '' }}" placeholder="support@umukozi.rw" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.875rem;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Email Features -->
+                    <div>
+                        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+                            <i class='bx bx-toggle-left' style="color: var(--primary-color);"></i> Email Features
+                        </h3>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" name="enable_notifications" {% if email_config.enable_notifications %}checked{% endif %} style="width: 1.25rem; height: 1.25rem;">
+                                <span style="font-weight: 500;">Enable Email Notifications</span>
+                            </label>
+                            
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" name="enable_welcome_emails" {% if email_config.enable_welcome_emails %}checked{% endif %} style="width: 1.25rem; height: 1.25rem;">
+                                <span style="font-weight: 500;">Welcome Emails</span>
+                            </label>
+                            
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" name="enable_job_alerts" {% if email_config.enable_job_alerts %}checked{% endif %} style="width: 1.25rem; height: 1.25rem;">
+                                <span style="font-weight: 500;">Job Alerts</span>
+                            </label>
+                            
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" name="enable_verification_emails" {% if email_config.enable_verification_emails %}checked{% endif %} style="width: 1.25rem; height: 1.25rem;">
+                                <span style="font-weight: 500;">Verification Emails</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; gap: 1rem; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
+                    <button type="submit" class="btn" style="background: var(--primary-color); color: white; padding: 0.75rem 2rem; border-radius: 0.5rem; font-weight: 600;">
+                        <i class='bx bx-save'></i> Save Settings
+                    </button>
+                    <button type="button" onclick="resetToDefaults()" class="btn" style="background: var(--gray-color); color: white; padding: 0.75rem 2rem; border-radius: 0.5rem; font-weight: 600;">
+                        <i class='bx bx-reset'></i> Reset to Defaults
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Test Email Section -->
+        <div class="card" style="background: var(--white); border-radius: 1rem; padding: 2rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+            <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+                <i class='bx bx-send' style="color: var(--primary-color);"></i> Send Test Email
+            </h3>
+            
+            <form id="testEmailForm">
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: end;">
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Test Email Address</label>
+                        <input type="email" id="testEmail" placeholder="Enter email address to send test" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.875rem;">
+                    </div>
+                    <button type="submit" class="btn" style="background: var(--secondary-color); color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600;">
+                        <i class='bx bx-paper-plane'></i> Send Test
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+
+<!-- Success/Error Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} flash-message" data-category="{{ category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<style>
+.flash-message {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    z-index: 9999;
+    min-width: 300px;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.flash-message[data-category="success"] {
+    background: var(--success-color);
+}
+
+.flash-message[data-category="error"] {
+    background: var(--danger-color);
+}
+
+.flash-message[data-category="info"] {
+    background: var(--primary-color);
+}
+
+.flash-message[data-category="warning"] {
+    background: var(--warning-color);
+}
+</style>
+
+<script>
+// Test email connection
+function testEmailConnection() {
+    // Get form data
+    const formData = new FormData(document.getElementById('emailSettingsForm'));
+    const data = {
+        smtp_server: formData.get('smtp_server'),
+        smtp_port: formData.get('smtp_port'),
+        smtp_username: formData.get('smtp_username'),
+        smtp_password: formData.get('smtp_password'),
+        smtp_encryption: formData.get('smtp_encryption')
+    };
+    
+    fetch('/admin/test-email-connection', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Email connection test successful!', 'success');
+        } else {
+            showNotification('Email connection test failed: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error testing email connection: ' + error, 'error');
+    });
+}
+
+// Send test email
+document.getElementById('testEmailForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const testEmail = document.getElementById('testEmail').value;
+    
+    fetch('/admin/send-test-email', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: testEmail })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Test email sent successfully to ' + testEmail, 'success');
+        } else {
+            showNotification('Failed to send test email: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error sending test email: ' + error, 'error');
+    });
+});
+
+// Reset to defaults
+function resetToDefaults() {
+    if (confirm('Are you sure you want to reset all email settings to defaults?')) {
+        document.getElementById('emailSettingsForm').reset();
+        showNotification('Settings reset to defaults. Please save to apply changes.', 'info');
+    }
+}
+
+// Show notification
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-' + type;
+    notification.style.cssText = 'position: fixed; top: 100px; right: 20px; z-index: 9999; min-width: 300px; padding: 1rem; border-radius: 0.5rem; background: ' + 
+        (type === 'success' ? 'var(--success-color)' : type === 'error' ? 'var(--danger-color)' : 'var(--primary-color)') + 
+        '; color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);';
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
+}
+
+// Auto-hide flash messages
+setTimeout(() => {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            alert.style.opacity = '0';
+            setTimeout(() => alert.remove(), 300);
+        }, 3000);
+    });
+}, 100);
+</script>
+{% endblock %}
