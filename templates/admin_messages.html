@@ -88,8 +88,14 @@
                         <div class="message-item {% if not message.is_read %}unread{% endif %} {% if message.priority == 'urgent' %}urgent{% endif %}" 
                              onclick="openMessage({{ message.id }})" data-message-id="{{ message.id }}">
                             <div class="message-avatar">
-                                {% if message.sender.profile_picture %}
-                                <img src="{{ get_image_url(message.sender.profile_picture) }}" alt="{{ message.sender.full_name }}">
+                                {% set sender_pic = None %}
+                                {% if message.sender.worker and message.sender.worker.profile_picture %}
+                                    {% set sender_pic = message.sender.worker.profile_picture %}
+                                {% elif message.sender.employer and message.sender.employer.profile_picture %}
+                                    {% set sender_pic = message.sender.employer.profile_picture %}
+                                {% endif %}
+                                {% if sender_pic %}
+                                <img src="{{ get_image_url(sender_pic) }}" alt="{{ message.sender.full_name }}">
                                 {% else %}
                                 <div class="avatar-placeholder">{{ message.sender.full_name[0].upper() }}</div>
                                 {% endif %}

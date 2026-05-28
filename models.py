@@ -36,7 +36,7 @@ class Worker(db.Model):
     date_of_birth = db.Column(db.Date)
     age = db.Column(db.Integer)  # Calculated age for easy access
     national_id = db.Column(db.String(20))
-    profile_picture = db.Column(db.String(200))
+    profile_picture = db.Column(db.String(500))  # Cloudinary URL (can be 200-400+ chars)
     bio = db.Column(db.Text)
     
     # Location
@@ -57,7 +57,7 @@ class Worker(db.Model):
     services_offered = db.Column(db.Text)  # JSON string of services
     
     # Profile Completion Requirements
-    id_photo = db.Column(db.String(200))  # Path to ID photo
+    id_photo = db.Column(db.String(500))  # Cloudinary URL for ID photo
     experience_details = db.Column(db.Text)  # Detailed experience description
     reference_name = db.Column(db.String(100))  # Reference contact name
     reference_phone = db.Column(db.String(20))  # Reference contact phone
@@ -86,7 +86,7 @@ class Employer(db.Model):
     # Company/Household Information
     company_name = db.Column(db.String(100))
     household_type = db.Column(db.String(50))  # 'family', 'individual', 'company'
-    profile_picture = db.Column(db.String(200))
+    profile_picture = db.Column(db.String(500))  # Cloudinary URL (can be 200-400+ chars)
     bio = db.Column(db.Text)
     
     # Location
@@ -318,7 +318,7 @@ class Payment(db.Model):
     # Status
     status = db.Column(db.String(20), default='pending')  # 'pending', 'verified', 'rejected'
     verification_code = db.Column(db.String(10))  # Code for admin verification
-    screenshot_path = db.Column(db.String(200))  # Path to payment screenshot
+    screenshot_path = db.Column(db.String(500))  # Cloudinary URL for payment screenshot
     
     # Verification
     verified_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Admin who verified
