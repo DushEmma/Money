@@ -124,7 +124,7 @@
                                     <input type="checkbox" class="worker-checkbox" value="{{ worker.id }}" style="margin-right: 0.5rem;">
                                     <div class="worker-avatar {% if worker.profile_picture %}has-profile-picture{% else %}default-avatar{% endif %}" style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: bold; flex-shrink: 0; overflow: hidden; color: white;">
                                         {% if worker.profile_picture %}
-                                            <img src="{{ url_for('static', filename='uploads/' + worker.profile_picture) }}" style="width: 100%; height: 100%; object-fit: cover;" alt="{{ worker.user.full_name }}">
+                                            <img src="{{ get_image_url(worker.profile_picture) }}" style="width: 100%; height: 100%; object-fit: cover;" alt="{{ worker.user.full_name }}">
                                         {% else %}
                                             {{ worker.user.full_name[0].upper() }}
                                         {% endif %}

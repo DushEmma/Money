@@ -89,7 +89,7 @@
                              onclick="openMessage({{ message.id }})" data-message-id="{{ message.id }}">
                             <div class="message-avatar">
                                 {% if message.sender.profile_picture %}
-                                <img src="{{ url_for('static', filename='uploads/' + message.sender.profile_picture) }}" alt="{{ message.sender.full_name }}">
+                                <img src="{{ get_image_url(message.sender.profile_picture) }}" alt="{{ message.sender.full_name }}">
                                 {% else %}
                                 <div class="avatar-placeholder">{{ message.sender.full_name[0].upper() }}</div>
                                 {% endif %}

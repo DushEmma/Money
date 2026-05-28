@@ -144,7 +144,7 @@
                                 <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
                                     <div class="user-avatar {% if user.profile_picture %}has-profile-picture{% else %}default-avatar{% endif %}" style="width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; flex-shrink: 0; overflow: hidden; color: white;">
                                         {% if user.profile_picture %}
-                                            <img src="{{ url_for('static', filename='uploads/' + user.profile_picture) }}" style="width: 100%; height: 100%; object-fit: cover;" alt="{{ user.user.full_name }}">
+                                            <img src="{{ get_image_url(user.profile_picture) }}" style="width: 100%; height: 100%; object-fit: cover;" alt="{{ user.user.full_name }}">
                                         {% else %}
                                             {{ user.user.full_name[0].upper() }}
                                         {% endif %}
@@ -203,7 +203,7 @@
                                 </h4>
                                 {% if user.id_photo %}
                                     <div style="position: relative; border-radius: 0.75rem; overflow: hidden; border: 2px solid var(--border-color); cursor: pointer;" onclick="openIdPhotoModal('{{ user.id_photo }}')">
-                                        <img src="{{ url_for('static', filename='uploads/' + user.id_photo) }}" style="width: 100%; height: 200px; object-fit: cover;" alt="ID Document">
+                                        <img src="{{ get_image_url(user.id_photo) }}" style="width: 100%; height: 200px; object-fit: cover;" alt="ID Document">
                                         <div style="position: absolute; bottom: 0; right: 0; background: rgba(0, 0, 0, 0.7); color: white; padding: 0.5rem; font-size: 0.75rem;">
                                             <i class='bx bx-search-alt'></i> Click to enlarge
                                         </div>
@@ -222,7 +222,7 @@
                                         Profile Photo
                                     </h4>
                                     <div style="border-radius: 0.75rem; overflow: hidden; border: 2px solid var(--border-color);">
-                                        <img src="{{ url_for('static', filename='uploads/' + user.profile_picture) }}" style="width: 100%; height: 150px; object-fit: cover;" alt="Profile Photo">
+                                        <img src="{{ get_image_url(user.profile_picture) }}" style="width: 100%; height: 150px; object-fit: cover;" alt="Profile Photo">
                                     </div>
                                 {% endif %}
                             </div>
@@ -435,7 +435,7 @@ function openIdPhotoModal(idPhoto) {
     
     const modal = document.getElementById('idPhotoModal');
     const fullSizeImg = document.getElementById('idPhotoFullSize');
-    fullSizeImg.src = '/static/uploads/' + idPhoto;
+    fullSizeImg.src = (String(idPhoto).startsWith('http') ? idPhoto : '/static/uploads/' + idPhoto);
     modal.style.display = 'flex';
 }
 

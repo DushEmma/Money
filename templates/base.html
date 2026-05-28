@@ -101,9 +101,9 @@
                         <button type="button" class="profile-toggle" onclick="toggleProfileDropdown(event)" style="background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; padding: 0;">
                             <div class="profile-avatar" style="width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: var(--border-color); display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-weight: bold; border: 2px solid var(--primary-color);">
                                 {% if current_user.user_type == 'worker' and worker is defined and worker.profile_picture %}
-                                    <img src="{{ url_for('static', filename='uploads/' + worker.profile_picture) }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" alt="Profile Picture">
+                                    <img src="{{ get_image_url(worker.profile_picture) }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" alt="Profile Picture">
                                 {% elif current_user.user_type == 'employer' and employer is defined and employer.profile_picture %}
-                                    <img src="{{ url_for('static', filename='uploads/' + employer.profile_picture) }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" alt="Profile Picture">
+                                    <img src="{{ get_image_url(employer.profile_picture) }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" alt="Profile Picture">
                                 {% else %}
                                     {{ current_user.full_name[0].upper() }}
                                 {% endif %}

@@ -569,7 +569,7 @@
                     <div class="profile-avatar-wrapper">
                         <div class="profile-avatar {% if worker.profile_picture %}has-profile-picture{% else %}default-avatar{% endif %}">
                             {% if worker.profile_picture %}
-                                <img src="{{ url_for('static', filename='uploads/' + worker.profile_picture) }}" alt="{{ worker.user.full_name }}">
+                                <img src="{{ get_image_url(worker.profile_picture) }}" alt="{{ worker.user.full_name }}">
                             {% else %}
                                 {{ worker.user.full_name[0].upper() }}
                             {% endif %}

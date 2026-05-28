@@ -152,7 +152,14 @@ def inject_globals():
             notifs = []
             unread_count = 0
         
-    return dict(_=translate, notifs=notifs, unread_count=unread_count)
+    def get_image_url(filename, folder='uploads'):
+        if not filename:
+            return ""
+        if filename.startswith('http://') or filename.startswith('https://'):
+            return filename
+        return url_for('static', filename=f"{folder}/{filename}")
+        
+    return dict(_=translate, notifs=notifs, unread_count=unread_count, get_image_url=get_image_url)
 
 @app.route('/set_language/<lang>')
 def set_language(lang):
