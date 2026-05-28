@@ -21,3 +21,7 @@ blinker==1.6.3
 
 # Render-specific dependencies
 psycopg2==2.9.7
+
+# Cloud storage support
+cloudinary==1.44.2
+

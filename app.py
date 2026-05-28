@@ -14,12 +14,45 @@ from werkzeug.utils import secure_filename
 
 load_dotenv()
 
+import cloudinary
+import cloudinary.uploader
+from cloudinary.utils import cloudinary_url
+
+# Configure Cloudinary
+cloudinary.config(
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.getenv('CLOUDINARY_API_KEY'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET'),
+    secure=True
+)
+
+def upload_to_cloudinary(file, folder="uploads"):
+    """
+    Upload a file-like object to Cloudinary and return the secure URL.
+    Returns None if file is empty or upload fails.
+    """
+    if not file or not file.filename:
+        return None
+    try:
+        upload_result = cloudinary.uploader.upload(
+            file,
+            folder=folder,
+            resource_type="auto"
+        )
+        return upload_result.get('secure_url')
+    except Exception as e:
+        app.logger.error(f"Cloudinary upload error: {str(e)}")
+        app.logger.error(traceback.format_exc())
+        return None
+
+
 # Import Render configuration
 try:
     from render_config import setup_render_environment
-    database_url = setup_render_environment()
+    database_url = setup_render_environment() or os.getenv('DATABASE_URL', 'sqlite:///umukozi.db')
 except ImportError:
     database_url = os.getenv('DATABASE_URL', 'sqlite:///umukozi.db')
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
@@ -689,16 +722,21 @@ def submit_payment(worker_id):
             file = request.files['screenshot']
             if file and file.filename and allowed_file(file.filename, {'png', 'jpg', 'jpeg', 'gif'}):
                 try:
-                    filename = secure_filename(f"payment_{payment.id}_{int(time.time())}.{file.filename.split('.')[-1]}")
-                    filepath = os.path.join(upload_folder, filename)
-                    file.save(filepath)
-                    
-                    payment.screenshot_path = filename
+                    cloudinary_url = upload_to_cloudinary(file, folder="payments")
+                    if cloudinary_url:
+                        payment.screenshot_path = cloudinary_url
+                    else:
+                        filename = secure_filename(f"payment_{payment.id}_{int(time.time())}.{file.filename.split('.')[-1]}")
+                        filepath = os.path.join(upload_folder, filename)
+                        file.seek(0)
+                        file.save(filepath)
+                        payment.screenshot_path = filename
                     db.session.commit()
                 except Exception as e:
                     import logging
                     logging.error(f"Error saving screenshot: {str(e)}")
                     # Continue without screenshot - payment is still valid
+
         
         # Send notification to admin
         try:
@@ -772,10 +810,20 @@ def payment_submit():
             return redirect(url_for('payment_form_mobile'))
         
         # Save screenshot
-        if screenshot and allowed_file(screenshot.filename):
-            filename = secure_filename(f"payment_{current_user.id}_{int(time.time())}.{screenshot.filename.rsplit('.', 1)[1].lower()}")
-            screenshot_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            screenshot.save(screenshot_path)
+        if screenshot and allowed_file(screenshot.filename, {'png', 'jpg', 'jpeg', 'gif'}):
+            try:
+                cloudinary_url = upload_to_cloudinary(screenshot, folder="payments")
+                if cloudinary_url:
+                    screenshot_path_val = cloudinary_url
+                else:
+                    filename = secure_filename(f"payment_{current_user.id}_{int(time.time())}.{screenshot.filename.rsplit('.', 1)[1].lower()}")
+                    screenshot_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    screenshot.seek(0)
+                    screenshot.save(screenshot_path)
+                    screenshot_path_val = filename
+            except Exception as e:
+                flash('Error uploading screenshot', 'error')
+                return redirect(url_for('payment_form_mobile'))
         else:
             flash('Invalid file format', 'error')
             return redirect(url_for('payment_form_mobile'))
@@ -791,7 +839,7 @@ def payment_submit():
                 transaction_id=f"MOMO_{int(time.time())}",  # Generate auto transaction ID
                 phone_number=phone_number,
                 payer_name=payer_name,
-                screenshot_path=filename,
+                screenshot_path=screenshot_path_val,
                 status='pending'
             )
             db.session.add(payment)
@@ -1886,14 +1934,20 @@ def admin_upload_payment_screenshot(payment_id):
         return redirect(url_for('admin_payments'))
     
     if file and allowed_file(file.filename, {'png', 'jpg', 'jpeg', 'gif'}):
-        filename = secure_filename(f"payment_{payment.id}_{int(time.time())}.{file.filename.split('.')[-1]}")
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-        
-        payment.screenshot_path = filename
-        db.session.commit()
-        
-        flash('Screenshot uploaded successfully.', 'success')
+        try:
+            cloudinary_url = upload_to_cloudinary(file, folder="payments")
+            if cloudinary_url:
+                payment.screenshot_path = cloudinary_url
+            else:
+                filename = secure_filename(f"payment_{payment.id}_{int(time.time())}.{file.filename.split('.')[-1]}")
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.seek(0)
+                file.save(filepath)
+                payment.screenshot_path = filename
+            db.session.commit()
+            flash('Screenshot uploaded successfully.', 'success')
+        except Exception as e:
+            flash(f'Error saving screenshot: {str(e)}', 'error')
     else:
         flash('Invalid file type. Please upload PNG, JPG, or GIF.', 'error')
     
@@ -1953,15 +2007,30 @@ def worker_complete_profile():
                 
                 # Save profile picture
                 if profile_picture and profile_picture.filename:
-                    profile_filename = f"profile_{worker.id}_{profile_picture.filename}"
-                    profile_picture.save(os.path.join(upload_dir, profile_filename))
-                    worker.profile_picture = profile_filename
+                    # Try Cloudinary upload
+                    cloudinary_url = upload_to_cloudinary(profile_picture, folder="worker_profiles")
+                    if cloudinary_url:
+                        worker.profile_picture = cloudinary_url
+                    else:
+                        # Fallback to local upload if Cloudinary fails
+                        profile_filename = f"profile_{worker.id}_{secure_filename(profile_picture.filename)}"
+                        profile_picture.seek(0)
+                        profile_picture.save(os.path.join(upload_dir, profile_filename))
+                        worker.profile_picture = profile_filename
                 
                 # Save ID photo
                 if id_photo and id_photo.filename:
-                    id_filename = f"id_{worker.id}_{id_photo.filename}"
-                    id_photo.save(os.path.join(upload_dir, id_filename))
-                    worker.id_photo = id_filename
+                    # Try Cloudinary upload
+                    cloudinary_url = upload_to_cloudinary(id_photo, folder="worker_ids")
+                    if cloudinary_url:
+                        worker.id_photo = cloudinary_url
+                    else:
+                        # Fallback to local upload if Cloudinary fails
+                        id_filename = f"id_{worker.id}_{secure_filename(id_photo.filename)}"
+                        id_photo.seek(0)
+                        id_photo.save(os.path.join(upload_dir, id_filename))
+                        worker.id_photo = id_filename
+
                 
                 # Update text fields
                 worker.age = int(request.form.get('age')) if request.form.get('age') else None
@@ -3700,9 +3769,24 @@ def change_password():
     })
 
 # Route to serve uploaded files
-@app.route('/static/uploads/<filename>')
+@app.route('/static/uploads/<path:filename>')
 def serve_uploaded_file(filename):
-    """Serve uploaded files from the uploads directory."""
+    """Serve uploaded files from the uploads directory or redirect to Cloudinary."""
+    import urllib.parse
+    decoded_filename = urllib.parse.unquote(filename)
+    
+    # Check if the filename starts with http:// or https://
+    if decoded_filename.startswith('http://') or decoded_filename.startswith('https://'):
+        return redirect(decoded_filename)
+        
+    # Also support nested URL format (e.g. from url_for static)
+    if 'http:/' in decoded_filename or 'https:/' in decoded_filename:
+        if 'https:/' in decoded_filename:
+            url = 'https://' + decoded_filename.split('https:/', 1)[1].lstrip('/')
+        else:
+            url = 'http://' + decoded_filename.split('http:/', 1)[1].lstrip('/')
+        return redirect(url)
+        
     from flask import send_from_directory
     upload_folder = app.config.get('UPLOAD_FOLDER', 'static/uploads')
     return send_from_directory(upload_folder, filename)
