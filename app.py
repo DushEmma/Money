@@ -20,18 +20,26 @@ from cloudinary.utils import cloudinary_url
 
 # Configure Cloudinary
 cloudinary.config(
-    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
-    api_key=os.getenv('CLOUDINARY_API_KEY'),
-    api_secret=os.getenv('CLOUDINARY_API_SECRET'),
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME') or None,
+    api_key=os.getenv('CLOUDINARY_API_KEY') or None,
+    api_secret=os.getenv('CLOUDINARY_API_SECRET') or None,
     secure=True
+)
+
+CLOUDINARY_ENABLED = bool(
+    os.getenv('CLOUDINARY_URL') or
+    (os.getenv('CLOUDINARY_CLOUD_NAME') and os.getenv('CLOUDINARY_API_KEY') and os.getenv('CLOUDINARY_API_SECRET'))
 )
 
 def upload_to_cloudinary(file, folder="uploads"):
     """
     Upload a file-like object to Cloudinary and return the secure URL.
-    Returns None if file is empty or upload fails.
+    Returns None if file is empty, Cloudinary is not configured, or upload fails.
     """
     if not file or not file.filename:
+        return None
+    if not CLOUDINARY_ENABLED:
+        app.logger.warning("Cloudinary is not configured; skipping Cloudinary upload.")
         return None
     try:
         upload_result = cloudinary.uploader.upload(
@@ -2079,6 +2087,8 @@ def worker_complete_profile():
                 upload_dir = os.path.join('static', 'uploads')
                 if not os.path.exists(upload_dir):
                     os.makedirs(upload_dir)
+
+                allow_local_fallback = os.getenv('FLASK_ENV') != 'production'
                 
                 # Save profile picture
                 if profile_picture and profile_picture.filename:
@@ -2086,25 +2096,29 @@ def worker_complete_profile():
                     cloudinary_url = upload_to_cloudinary(profile_picture, folder="worker_profiles")
                     if cloudinary_url:
                         worker.profile_picture = cloudinary_url
-                    else:
-                        # Fallback to local upload if Cloudinary fails
+                    elif allow_local_fallback:
+                        # Fallback to local upload if Cloudinary is not available in development
                         profile_filename = f"profile_{worker.id}_{secure_filename(profile_picture.filename)}"
                         profile_picture.seek(0)
                         profile_picture.save(os.path.join(upload_dir, profile_filename))
                         worker.profile_picture = profile_filename
-                
+                    else:
+                        app.logger.error("Failed to upload profile picture: Cloudinary not available in production.")
+
                 # Save ID photo
                 if id_photo and id_photo.filename:
                     # Try Cloudinary upload
                     cloudinary_url = upload_to_cloudinary(id_photo, folder="worker_ids")
                     if cloudinary_url:
                         worker.id_photo = cloudinary_url
-                    else:
-                        # Fallback to local upload if Cloudinary fails
+                    elif allow_local_fallback:
+                        # Fallback to local upload if Cloudinary is not available in development
                         id_filename = f"id_{worker.id}_{secure_filename(id_photo.filename)}"
                         id_photo.seek(0)
                         id_photo.save(os.path.join(upload_dir, id_filename))
                         worker.id_photo = id_filename
+                    else:
+                        app.logger.error("Failed to upload ID photo: Cloudinary not available in production.")
 
                 
                 # Update text fields
