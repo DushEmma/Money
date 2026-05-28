@@ -109,6 +109,7 @@ def run_migrations():
         finally:
             app._migration_complete = True
 
+
 # Global error handler
 @app.errorhandler(500)
 def internal_server_error(e):
@@ -440,10 +441,6 @@ def login():
                     flash('❌ Your account has been blocked. Please contact support.', 'error')
                     return render_template('login.html')
                 
-                # Check if user is approved (except admin users)
-                if user.user_type != 'admin' and not user.is_approved:
-                    flash('⏳ Your account is pending approval. Please wait for admin verification.', 'warning')
-                    return render_template('login.html')
                 
                 login_user(user)
                 # Personalized welcome message
@@ -522,8 +519,10 @@ def register():
         db.session.add(welcome_notif)
         db.session.commit()
         
-        flash('Registration successful! Please login.')
-        return redirect(url_for('login'))
+        login_user(new_user)
+        user_type_name = "Worker" if new_user.user_type == 'worker' else "Employer" if new_user.user_type == 'employer' else "Administrator"
+        flash(f'🎉 Welcome to Umukozi, {new_user.full_name}! You are logged in as a {user_type_name}.', 'success')
+        return redirect(url_for('dashboard'))
     
     return render_template('register.html')
 
